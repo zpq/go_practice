@@ -1,41 +1,40 @@
 package main
 
 import (
-	"crypto/md5"
+	// "crypto/md5"
 	"fmt"
 	"io/ioutil"
 )
 
 func main() {
-	dir := "F:\\gotest\\src\\"
+	dir := "F:\\go\\workspace\\"
+	level := "|-"
+	readdir(dir, level)
+}
+
+func readdir(dir, level string) {
 	dirs, err := ioutil.ReadDir(dir)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-
 	for _, v := range dirs {
-		// fmt.Println(v.Name(), " ", v.IsDir(), " ", v.ModTime(), " ", v.Mode(), " ", v.Size(), " ")
-		if !v.IsDir() {
-			srcData, err := ioutil.ReadFile(dir + v.Name())
-			if err != nil {
-				fmt.Println(err.Error())
-				continue
-			}
-
-			cipherText1 := md5.Sum(srcData)
-			fmt.Print(v.Name() + " ")
-			fmt.Printf(" md5 encrypto is : %x \n", cipherText1)
+		if v.IsDir() {
+			fmt.Println(level + v.Name())
+			subdir := dir + v.Name() + "\\"
+			// fmt.Println(subdir)
+			level += "-"
+			readdir(subdir, level)
+		} else {
+			// fmt.Println(v.Name(), " ", v.IsDir(), " ", v.ModTime(), " ", v.Mode(), " ", v.Size(), " ")
+			fmt.Println(level + v.Name())
 		}
-
-		// hash.Write(srcData)
-
-		// cipherText2 := hash.Sum(nil)
-
-		// hexText := make([]byte, 32)
-
-		// hex.Encode(hexText, cipherText2)
-
-		// fmt.Println("md5 encrypto is \"iyannik0215\":", string(hexText))
+		// if !v.IsDir() {
+		// 	srcData, err := ioutil.ReadFile(dir + v.Name())
+		// 	if err != nil {
+		// 		fmt.Println(err.Error())
+		// 		continue
+		// 	}
+		// }
 	}
 }
