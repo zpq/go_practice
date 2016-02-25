@@ -36,7 +36,7 @@ func main() {
 			return
 		}
 		for _, v := range dirs {
-			func() {
+			go func(v os.FileInfo) {
 				if v.IsDir() {
 					return
 				}
@@ -56,7 +56,7 @@ func main() {
 						}
 					}
 				}
-			}()
+			}(v)
 		}
 		fmt.Println("I am watching...")
 		time.Sleep(time.Second * 30)
