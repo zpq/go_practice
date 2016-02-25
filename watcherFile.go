@@ -23,10 +23,13 @@ func main() {
 	for _, v := range flag.Args() {
 		fmt.Println(v)
 	}
-
-	srcDir, dstDir := "F:\\gotest\\src\\", "F:\\gotest\\dst\\"
+	if flag.NArg() != 2 {
+		fmt.Println("args error")
+		return
+	}
+	srcDir, dstDir := flag.Arg(0), flag.Arg(1)
+	// srcDir, dstDir := "F:\\gotest\\src\\", "F:\\gotest\\dst\\"
 	for {
-
 		dirs, err := ioutil.ReadDir(srcDir)
 		if err != nil {
 			fmt.Println("read dir error:", err.Error())
@@ -55,7 +58,6 @@ func main() {
 				}
 			}()
 		}
-
 		fmt.Println("I am watching...")
 		time.Sleep(time.Second * 30)
 	}
