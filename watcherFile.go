@@ -73,7 +73,9 @@ func core(srcDir, dstDir string) {
 				fmt.Println("mkdir error:", err.Error())
 				return
 			}
-			go core(srcDir+v.Name(), dstDir+v.Name())
+			srcDir += v.Name()
+			dstDir += v.Name()
+			go core(srcDir, dstDir)
 		} else {
 			fs, fd := srcDir+v.Name(), dstDir+v.Name()
 			srcData, err := ioutil.ReadFile(fs)
