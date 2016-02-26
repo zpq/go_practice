@@ -28,7 +28,7 @@ func main() {
 		return
 	}
 	srcDir, dstDir := flag.Arg(0), flag.Arg(1)
-	// srcDir, dstDir := "F:\\gotest\\src\\", "F:\\gotest\\dst\\"
+	// srcDir, dstDir := "F:\\gotest\\src", "F:\\gotest\\dst"
 	for {
 		dirs, err := ioutil.ReadDir(srcDir)
 		if err != nil {
@@ -65,11 +65,13 @@ func main() {
 }
 
 func core(v os.FileInfo, srcDir, dstDir string) {
+	srcDir += "/"
+	dstDir += "/"
 	if v.IsDir() {
 		if err := os.Mkdir(dstDir+v.Name(), 0777); err != nil {
 			return
 		}
-		go core(v, srcDir+v.Name()+"/", dstDir+v.Name()+"/")
+		core(v, srcDir+v.Name(), dstDir+v.Name())
 	}
 	fs, fd := srcDir+v.Name(), dstDir+v.Name()
 	srcData, err := ioutil.ReadFile(fs)
