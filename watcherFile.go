@@ -73,8 +73,8 @@ func core(srcDir, dstDir string) {
 				fmt.Println("mkdir error:", err.Error())
 				return
 			}
-			subSrcDir = srcDir + v.Name() + "/"
-			subDstDir = dstDir + v.Name() + "/"
+			subSrcDir := srcDir + v.Name() + "/"
+			subDstDir := dstDir + v.Name() + "/"
 			go core(subSrcDir, subDstDir)
 		} else {
 			fs, fd := srcDir+v.Name(), dstDir+v.Name()
