@@ -7,8 +7,8 @@ import (
 )
 
 func main() {
-	dir := "F:\\go\\workspace\\"
-	level := "|-"
+	dir := "D:\\alog\\201506\\"
+	level := ""
 	readdir(dir, level)
 }
 
@@ -20,14 +20,14 @@ func readdir(dir, level string) {
 	}
 	for _, v := range dirs {
 		if v.IsDir() {
-			fmt.Println(level + v.Name())
+			fmt.Println(level + " |--" + v.Name())
 			subdir := dir + v.Name() + "\\"
 			// fmt.Println(subdir)
-			level += "-"
+			level += "  "
 			readdir(subdir, level)
 		} else {
 			// fmt.Println(v.Name(), " ", v.IsDir(), " ", v.ModTime(), " ", v.Mode(), " ", v.Size(), " ")
-			fmt.Println(level + v.Name())
+			fmt.Println(level + " |--" + v.Name())
 		}
 		// if !v.IsDir() {
 		// 	srcData, err := ioutil.ReadFile(dir + v.Name())

@@ -36,30 +36,53 @@ func main() {
 			return
 		}
 		for _, v := range dirs {
-			go func(v os.FileInfo) {
-				if v.IsDir() {
-					return
-				}
-				fs, fd := srcDir+v.Name(), dstDir+v.Name()
-				srcData, err := ioutil.ReadFile(fs)
-				if err != nil {
-					return
-				}
-				ok := parseFile(srcData, fs)
-				if !ok {
-					n, err := CopyFile(fs, fd)
-					if err != nil {
-						return
-					} else {
-						if n != -1 {
-							fmt.Printf("%s copy ==> to %s, total byte %d\n", fs, fd, n)
-						}
-					}
-				}
-			}(v)
+			// go func(v os.FileInfo) {
+			// 	if v.IsDir() {
+			// 		return
+			// 	}
+			// 	fs, fd := srcDir+v.Name(), dstDir+v.Name()
+			// 	srcData, err := ioutil.ReadFile(fs)
+			// 	if err != nil {
+			// 		return
+			// 	}
+			// 	ok := parseFile(srcData, fs)
+			// 	if !ok {
+			// 		n, err := CopyFile(fs, fd)
+			// 		if err != nil {
+			// 			return
+			// 		} else {
+			// 			if n != -1 {
+			// 				fmt.Printf("%s copy ==> to %s, total byte %d\n", fs, fd, n)
+			// 			}
+			// 		}
+			// 	}
+			// }(v)
+			core(v, srcDir, dstDir)
 		}
 		fmt.Println("I am watching...")
 		time.Sleep(time.Second * 30)
+	}
+}
+
+func core(v os.FileInfo, srcDir, dstDir string) {
+	if v.IsDir() {
+		go core(v)
+	}
+	fs, fd := srcDir+v.Name(), dstDir+v.Name()
+	srcData, err := ioutil.ReadFile(fs)
+	if err != nil {
+		return
+	}
+	ok := parseFile(srcData, fs)
+	if !ok {
+		n, err := CopyFile(fs, fd)
+		if err != nil {
+			return
+		} else {
+			if n != -1 {
+				fmt.Printf("%s copy ==> to %s, total byte %d\n", fs, fd, n)
+			}
+		}
 	}
 }
 
