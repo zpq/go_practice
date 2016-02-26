@@ -60,8 +60,8 @@ func main() {
 }
 
 func core(srcDir, dstDir string) {
-	srcDir += "/"
-	dstDir += "/"
+	// srcDir += "/"
+	// dstDir += "/"
 	dirs, err := ioutil.ReadDir(srcDir)
 	if err != nil {
 		fmt.Println("read dir error:", err.Error())
@@ -73,9 +73,9 @@ func core(srcDir, dstDir string) {
 				fmt.Println("mkdir error:", err.Error())
 				return
 			}
-			srcDir += v.Name()
-			dstDir += v.Name()
-			go core(srcDir, dstDir)
+			subSrcDir = srcDir + v.Name() + "/"
+			subDstDir = dstDir + v.Name() + "/"
+			go core(subSrcDir, subDstDir)
 		} else {
 			fs, fd := srcDir+v.Name(), dstDir+v.Name()
 			srcData, err := ioutil.ReadFile(fs)
