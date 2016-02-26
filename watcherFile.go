@@ -60,35 +60,36 @@ func main() {
 }
 
 func core(srcDir, dstDir string) {
+	srcDir += "/"
+	dstDir += "/"
 	dirs, err := ioutil.ReadDir(srcDir)
 	if err != nil {
 		fmt.Println("read dir error:", err.Error())
 		return
 	}
 	for _, v := range dirs {
-		srcDir += "/"
-		dstDir += "/"
 		if v.IsDir() {
 			if err := os.Mkdir(dstDir+v.Name(), 0777); err != nil {
 				fmt.Println("mkdir error:", err.Error())
 				return
 			}
 			go core(srcDir+v.Name(), dstDir+v.Name())
-		}
-		fs, fd := srcDir+v.Name(), dstDir+v.Name()
-		srcData, err := ioutil.ReadFile(fs)
-		if err != nil {
-			fmt.Println("read file error:", err.Error())
-			return
-		}
-		ok := parseFile(srcData, fs)
-		if !ok {
-			n, err := CopyFile(fs, fd)
+		} else {
+			fs, fd := srcDir+v.Name(), dstDir+v.Name()
+			srcData, err := ioutil.ReadFile(fs)
 			if err != nil {
+				fmt.Println("read file error:", err.Error())
 				return
-			} else {
-				if n != -1 {
-					fmt.Printf("%s copy ==> to %s, total byte %d\n", fs, fd, n)
+			}
+			ok := parseFile(srcData, fs)
+			if !ok {
+				n, err := CopyFile(fs, fd)
+				if err != nil {
+					return
+				} else {
+					if n != -1 {
+						fmt.Printf("%s copy ==> to %s, total byte %d\n", fs, fd, n)
+					}
 				}
 			}
 		}
