@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -59,22 +60,37 @@ func core(srcDir, dstDir string) {
 				return err.Error()
 			}
 			if fi.Mode().IsDir() { //is a link file
-				fmt.Println(fi.Name())
-			}
-			fs, fd := srcDir+v.Name(), dstDir+v.Name()
-			srcData, err := ioutil.ReadFile(fs)
-			if err != nil {
-				fmt.Println("read file error:", err.Error())
-				return
-			}
-			ok := parseFile(srcData, fs)
-			if !ok {
-				n, err := CopyFile(fs, fd)
+				link, err := os.Readlink(srcDir + v.Name())
 				if err != nil {
+					fmt.Println(err.Error())
 					return
-				} else {
-					if n != -1 {
-						fmt.Printf("%s copy ==> to %s, total byte %d\n", fs, fd, n)
+				}
+				links := strings.Split("/", link)
+				dstDir += "/" + links[len(links)-1:]
+				if !fileExists(dstDir) {
+					if err := os.Mkdir(dstDir, 0777); err != nil {
+						fmt.Println("mkdir error:", err.Error())
+						return
+					}
+				}
+				// fmt.Println(link)
+				go core(link, dstDir)
+			} else {
+				fs, fd := srcDir+v.Name(), dstDir+v.Name()
+				srcData, err := ioutil.ReadFile(fs)
+				if err != nil {
+					fmt.Println("read file error:", err.Error())
+					return
+				}
+				ok := parseFile(srcData, fs)
+				if !ok {
+					n, err := CopyFile(fs, fd)
+					if err != nil {
+						return
+					} else {
+						if n != -1 {
+							fmt.Printf("%s copy ==> to %s, total byte %d\n", fs, fd, n)
+						}
 					}
 				}
 			}
