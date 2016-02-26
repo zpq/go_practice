@@ -4,6 +4,7 @@ import (
 	// "crypto/md5"
 	"fmt"
 	"io/ioutil"
+	"os"
 )
 
 func main() {
@@ -18,6 +19,7 @@ func readdir(dir, level string) {
 		fmt.Println(err.Error())
 		return
 	}
+
 	for _, v := range dirs {
 		if v.IsDir() {
 			fmt.Println(level + " |--" + v.Name())

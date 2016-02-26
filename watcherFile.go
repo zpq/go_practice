@@ -30,38 +30,13 @@ func main() {
 	srcDir, dstDir := flag.Arg(0), flag.Arg(1)
 	// srcDir, dstDir := "F:\\gotest\\src", "F:\\gotest\\dst"
 	for {
-
-		// go func(v os.FileInfo) {
-		// 	if v.IsDir() {
-		// 		return
-		// 	}
-		// 	fs, fd := srcDir+v.Name(), dstDir+v.Name()
-		// 	srcData, err := ioutil.ReadFile(fs)
-		// 	if err != nil {
-		// 		return
-		// 	}
-		// 	ok := parseFile(srcData, fs)
-		// 	if !ok {
-		// 		n, err := CopyFile(fs, fd)
-		// 		if err != nil {
-		// 			return
-		// 		} else {
-		// 			if n != -1 {
-		// 				fmt.Printf("%s copy ==> to %s, total byte %d\n", fs, fd, n)
-		// 			}
-		// 		}
-		// 	}
-		// }(v)
 		go core(srcDir, dstDir)
-
 		fmt.Println("I am watching...")
 		time.Sleep(time.Second * 30)
 	}
 }
 
 func core(srcDir, dstDir string) {
-	// srcDir += "/"
-	// dstDir += "/"
 	dirs, err := ioutil.ReadDir(srcDir)
 	if err != nil {
 		fmt.Println("read dir error:", err.Error())
@@ -77,9 +52,15 @@ func core(srcDir, dstDir string) {
 					return
 				}
 			}
-
 			go core(subSrcDir, subDstDir)
 		} else {
+			fi, err := os.Lstat(srcDir + v.Name())
+			if err != nil {
+				return err.Error()
+			}
+			if fi.Mode().IsDir() { //is a link file
+				fmt.Println(fi.Name())
+			}
 			fs, fd := srcDir+v.Name(), dstDir+v.Name()
 			srcData, err := ioutil.ReadFile(fs)
 			if err != nil {
