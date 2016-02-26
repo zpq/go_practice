@@ -69,12 +69,15 @@ func core(srcDir, dstDir string) {
 	}
 	for _, v := range dirs {
 		if v.IsDir() {
-			if err := os.Mkdir(dstDir+v.Name(), 0777); err != nil {
-				fmt.Println("mkdir error:", err.Error())
-				return
-			}
 			subSrcDir := srcDir + v.Name() + "/"
 			subDstDir := dstDir + v.Name() + "/"
+			if !fileExists(subDstDir) {
+				if err := os.Mkdir(dstDir+v.Name(), 0777); err != nil {
+					fmt.Println("mkdir error:", err.Error())
+					return
+				}
+			}
+
 			go core(subSrcDir, subDstDir)
 		} else {
 			fs, fd := srcDir+v.Name(), dstDir+v.Name()
@@ -96,6 +99,11 @@ func core(srcDir, dstDir string) {
 			}
 		}
 	}
+}
+
+func fileExists(filename string) bool {
+	_, err := os.Stat(filename)
+	return err == nil || os.IsExist(err)
 }
 
 func CopyFile(src, dst string) (n int64, err error) {
