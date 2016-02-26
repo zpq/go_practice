@@ -57,7 +57,7 @@ func main() {
 			// 		}
 			// 	}
 			// }(v)
-			core(v, srcDir, dstDir)
+			go core(v, srcDir, dstDir)
 		}
 		fmt.Println("I am watching...")
 		time.Sleep(time.Second * 30)
@@ -66,7 +66,7 @@ func main() {
 
 func core(v os.FileInfo, srcDir, dstDir string) {
 	if v.IsDir() {
-		go core(v)
+		go core(v, srcDir+v.Name()+"/", dstDir+v.Name()+"/")
 	}
 	fs, fd := srcDir+v.Name(), dstDir+v.Name()
 	srcData, err := ioutil.ReadFile(fs)
