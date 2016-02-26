@@ -66,6 +66,9 @@ func main() {
 
 func core(v os.FileInfo, srcDir, dstDir string) {
 	if v.IsDir() {
+		if err := os.Mkdir(dstDir+v.Name(), 0777); err != nil {
+			return
+		}
 		go core(v, srcDir+v.Name()+"/", dstDir+v.Name()+"/")
 	}
 	fs, fd := srcDir+v.Name(), dstDir+v.Name()
