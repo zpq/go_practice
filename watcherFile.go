@@ -57,7 +57,8 @@ func core(srcDir, dstDir string) {
 		} else {
 			fi, err := os.Lstat(srcDir + v.Name())
 			if err != nil {
-				return err.Error()
+				fmt.Println(err.Error())
+				return
 			}
 			if fi.Mode().IsDir() { //is a link file
 				link, err := os.Readlink(srcDir + v.Name())
@@ -66,7 +67,10 @@ func core(srcDir, dstDir string) {
 					return
 				}
 				links := strings.Split("/", link)
-				dstDir += "/" + links[len(links)-1:]
+				for _, value := range links[len(links)-1:] {
+					dstDir += "/" + value
+				}
+
 				if !fileExists(dstDir) {
 					if err := os.Mkdir(dstDir, 0777); err != nil {
 						fmt.Println("mkdir error:", err.Error())
