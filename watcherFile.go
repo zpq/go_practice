@@ -55,21 +55,23 @@ func core(srcDir, dstDir string) {
 			}
 			go core(subSrcDir, subDstDir)
 		} else {
-			fi, err := os.Lstat(srcDir + v.Name())
+			fi, err := os.Stat(srcDir + v.Name())
 			if err != nil {
 				fmt.Println(err.Error())
 				return
 			}
+
 			if fi.Mode().IsDir() { //is a link file
 				link, err := os.Readlink(srcDir + v.Name())
 				if err != nil {
 					fmt.Println(err.Error())
 					return
 				}
-				links := strings.Split("/", link)
+				links := strings.Split(link, "/")
 				for _, value := range links[len(links)-1:] {
-					dstDir += "/" + value
+					dstDir +=  value + "/"
 				}
+				//fmt.Println("dstDir = " + dstDir)
 
 				if !fileExists(dstDir) {
 					if err := os.Mkdir(dstDir, 0777); err != nil {
@@ -77,7 +79,8 @@ func core(srcDir, dstDir string) {
 						return
 					}
 				}
-				// fmt.Println(link)
+				link += "/"
+				//fmt.Println("srcDir=" + link)
 				go core(link, dstDir)
 			} else {
 				fs, fd := srcDir+v.Name(), dstDir+v.Name()
@@ -90,6 +93,7 @@ func core(srcDir, dstDir string) {
 				if !ok {
 					n, err := CopyFile(fs, fd)
 					if err != nil {
+						fmt.Println("copy error: "+ err.Error())
 						return
 					} else {
 						if n != -1 {
