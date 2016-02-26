@@ -30,62 +30,66 @@ func main() {
 	srcDir, dstDir := flag.Arg(0), flag.Arg(1)
 	// srcDir, dstDir := "F:\\gotest\\src", "F:\\gotest\\dst"
 	for {
-		dirs, err := ioutil.ReadDir(srcDir)
-		if err != nil {
-			fmt.Println("read dir error:", err.Error())
-			return
-		}
-		for _, v := range dirs {
-			// go func(v os.FileInfo) {
-			// 	if v.IsDir() {
-			// 		return
-			// 	}
-			// 	fs, fd := srcDir+v.Name(), dstDir+v.Name()
-			// 	srcData, err := ioutil.ReadFile(fs)
-			// 	if err != nil {
-			// 		return
-			// 	}
-			// 	ok := parseFile(srcData, fs)
-			// 	if !ok {
-			// 		n, err := CopyFile(fs, fd)
-			// 		if err != nil {
-			// 			return
-			// 		} else {
-			// 			if n != -1 {
-			// 				fmt.Printf("%s copy ==> to %s, total byte %d\n", fs, fd, n)
-			// 			}
-			// 		}
-			// 	}
-			// }(v)
-			go core(v, srcDir, dstDir)
-		}
+
+		// go func(v os.FileInfo) {
+		// 	if v.IsDir() {
+		// 		return
+		// 	}
+		// 	fs, fd := srcDir+v.Name(), dstDir+v.Name()
+		// 	srcData, err := ioutil.ReadFile(fs)
+		// 	if err != nil {
+		// 		return
+		// 	}
+		// 	ok := parseFile(srcData, fs)
+		// 	if !ok {
+		// 		n, err := CopyFile(fs, fd)
+		// 		if err != nil {
+		// 			return
+		// 		} else {
+		// 			if n != -1 {
+		// 				fmt.Printf("%s copy ==> to %s, total byte %d\n", fs, fd, n)
+		// 			}
+		// 		}
+		// 	}
+		// }(v)
+		go core(srcDir, dstDir)
+
 		fmt.Println("I am watching...")
 		time.Sleep(time.Second * 30)
 	}
 }
 
-func core(v os.FileInfo, srcDir, dstDir string) {
-	srcDir += "/"
-	dstDir += "/"
-	if v.IsDir() {
-		if err := os.Mkdir(dstDir+v.Name(), 0777); err != nil {
-			return
-		}
-		core(v, srcDir+v.Name(), dstDir+v.Name())
-	}
-	fs, fd := srcDir+v.Name(), dstDir+v.Name()
-	srcData, err := ioutil.ReadFile(fs)
+func core(srcDir, dstDir string) {
+	dirs, err := ioutil.ReadDir(srcDir)
 	if err != nil {
+		fmt.Println("read dir error:", err.Error())
 		return
 	}
-	ok := parseFile(srcData, fs)
-	if !ok {
-		n, err := CopyFile(fs, fd)
+	for _, v := range dirs {
+		srcDir += "/"
+		dstDir += "/"
+		if v.IsDir() {
+			if err := os.Mkdir(dstDir+v.Name(), 0777); err != nil {
+				fmt.Println("mkdir error:", err.Error())
+				return
+			}
+			go core(srcDir+v.Name(), dstDir+v.Name())
+		}
+		fs, fd := srcDir+v.Name(), dstDir+v.Name()
+		srcData, err := ioutil.ReadFile(fs)
 		if err != nil {
+			fmt.Println("read file error:", err.Error())
 			return
-		} else {
-			if n != -1 {
-				fmt.Printf("%s copy ==> to %s, total byte %d\n", fs, fd, n)
+		}
+		ok := parseFile(srcData, fs)
+		if !ok {
+			n, err := CopyFile(fs, fd)
+			if err != nil {
+				return
+			} else {
+				if n != -1 {
+					fmt.Printf("%s copy ==> to %s, total byte %d\n", fs, fd, n)
+				}
 			}
 		}
 	}
