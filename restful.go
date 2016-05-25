@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	// "fmt"
 	"github.com/bmizerany/pat"
 	"log"
 	"net/http"
@@ -15,9 +15,22 @@ type User struct {
 	Name string
 }
 
+type Res struct {
+	Status  int
+	Message string
+	Datas   []User
+}
+
 func main() {
 	users = make(map[string]*User)
 	mux := pat.New()
+
+	// a := make(map[string]*User)
+	// a["a"] = &User{"1", "hah"}
+	// fmt.Println(a)
+	// a["a"].Name = "ffff"
+	// fmt.Println(*a["a"])
+	// return
 
 	mux.Get("/user/:name/profile", http.HandlerFunc(profile))
 	mux.Post("/user", http.HandlerFunc(addUser))
@@ -32,10 +45,12 @@ func main() {
 func profile(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	name := params.Get(":name")
-	ret := &User{}
+	ret := Res{Status: 0, Message: "failed", Datas: []User{}}
 	for _, v := range users {
 		if v.Name == name {
-			ret = v
+			ret.Datas = append(ret.Datas, *v)
+			ret.Status = 1
+			ret.Message = "successed"
 			break
 		}
 	}
@@ -44,46 +59,57 @@ func profile(w http.ResponseWriter, r *http.Request) {
 }
 
 func addUser(w http.ResponseWriter, r *http.Request) {
+	res := Res{Status: 0, Message: "failed", Datas: []User{}}
 	name := r.PostFormValue("name")
 	id := r.PostFormValue("id")
 	if name == "" || id == "" {
-		w.Write([]byte("invalid param!"))
+		res.Message = "invalid param"
+		// w.Write([]byte("invalid param!"))
 	} else {
 		_, ok := users[id]
 		if ok {
-			w.Write([]byte("user already exists"))
+			res.Message = "user already exists"
 		} else {
 			users[id] = &User{Id: id, Name: name}
-
-			body, err := json.Marshal(*users[id])
-			if err != nil {
-				fmt.Println(err.Error())
-			} else {
-				fmt.Print(users[id])
-			}
-			w.Write(body)
+			res.Datas = append(res.Datas, *users[id])
+			res.Status = 1
+			res.Message = "successed"
 		}
 	}
+	body, _ := json.Marshal(res)
+	w.Write(body)
 }
 
 func updateUser(w http.ResponseWriter, r *http.Request) {
+	res := Res{Status: 0, Message: "failed", Datas: []User{}}
 	id := r.PostFormValue("id")
 	name := r.PostFormValue("name")
 	if id == "" || name == "" {
-		w.Write([]byte("invalid param!"))
+		res.Message = "invalid param!"
 	} else {
 		_, ok := users[id]
 		if ok {
 			users[id].Name = name
-			body, _ := json.Marshal(*users[id])
-			w.Write(body)
+			res.Status = 1
+			res.Message = "successed"
+			res.Datas = append(res.Datas, *users[id])
 		} else {
-			w.Write([]byte("user does not exists"))
+			res.Message = "user does not exists"
 		}
 	}
+	body, _ := json.Marshal(res)
+	w.Write(body)
 }
 
 func getAllUsers(w http.ResponseWriter, r *http.Request) {
-	ret, _ := json.Marshal(users)
-	w.Write(ret)
+	res := Res{Status: 0, Message: "failed", Datas: []User{}}
+	if len(users) > 0 {
+		res.Status = 1
+		res.Message = "successed"
+	}
+	for _, v := range users {
+		res.Datas = append(res.Datas, *v)
+	}
+	body, _ := json.Marshal(res)
+	w.Write(body)
 }
