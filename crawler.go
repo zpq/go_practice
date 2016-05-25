@@ -39,7 +39,7 @@ func main() {
 
 	time.Sleep(time.Second * 10)
 	for _, v := range urls {
-		fmt.Println(v[1])
+		GetHtmlSource(v)
 	}
 	time.Sleep(time.Second * 10)
 }
