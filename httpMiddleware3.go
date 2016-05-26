@@ -18,7 +18,7 @@ func (this *httpMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Server", "Goginx")
-	w.WriteHeader(418)
+	w.WriteHeader(200)
 	w.Write([]byte("Golang http middleware!\n"))
 	w.Write(rec.Body.Bytes())
 }
