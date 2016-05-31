@@ -21,6 +21,8 @@ import (
 
 type gzorm struct {
 	db          *sql.DB
+	tx          *sql.Tx
+	txIsBegin   bool
 	tablePrefix string
 	tableName   string
 	sqlRaw      string
@@ -37,15 +39,33 @@ type gzorm struct {
 type Book struct {
 	Id            int
 	Bookname      string
-	Booknum       int
+	Booknumber    int
 	Status        int8
-	BookIntroduce string
+	BookIntroduce string `field:"book_introduce"`
+}
+
+type Books struct {
+	Id            int
+	Bookname      string
+	Booknumber    int
+	Status        int8
+	BookIntroduce string `field:"book_introduce"`
+}
+
+type X struct {
+	Id            int
+	Booknames     string
+	Booknumber    int
+	Status        int8
+	BookIntroduce string `field:"book_introduce"`
 }
 
 func main() {
 	o := NewOrm()
 	where := []interface{}{0, "1"}
 	o.RegisterModel(Book{}).SetTablePrefix("db_")
+
+	//test select
 	result, err := o.Fields("*").Where("id > ? and status = ?", where).OrderBy("id desc").Limit(10, 2).FindAll()
 	if err != nil {
 		log.Fatal(err.Error())
@@ -53,6 +73,51 @@ func main() {
 	for _, v := range result {
 		log.Println(v)
 	}
+
+	// test insert
+	// book := Book{}
+	// book.Bookname = "testBook"
+	// book.Booknumber = 1000
+	// book.Status = 1
+	// book.BookIntroduce = "test book for u"
+	// r, err := o.Insert(book)
+	// if err != nil {
+	// 	log.Fatal(err.Error())
+	// }
+	// log.Println(r)
+
+	//test update
+	// uPatam := []interface{}{16}
+	// r, err := o.Where("id = ?", uPatam).Update(Book{Bookname: "16号书", Status: 1})
+	// if err != nil {
+	// 	log.Fatal(err.Error())
+	// }
+	// log.Println(r)
+
+	//test delete
+	// dParam := []interface{}{16}
+	// d, err := o.Where("id = ?", dParam).Delete()
+	// if err != nil {
+	// 	log.Fatal(err.Error())
+	// }
+	// log.Println(d)
+
+	//test transaction
+	// oo := NewOrm()
+	// err = oo.RegisterModel(Books{}).SetTablePrefix("db_").BeginTran()
+	// if err != nil {
+	// 	log.Fatal(err.Error())
+	// }
+	// defer oo.Rollback()
+	// _, err = oo.Insert(Books{Bookname: "trans book5", Booknumber: 1})
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// _, err = o.Insert(X{Booknames: "trans book6", Booknumber: 2})
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// oo.Commit()
 }
 
 func connect() *sql.DB {
@@ -190,30 +255,199 @@ func (this *gzorm) query(num int) ([]map[string]interface{}, error) {
 	return result, nil
 }
 
-func (this *gzorm) Insert(m interface{}) (int, error) {
+//checks a field whether needed or not in insert sql
+func selectFieldsCheck(v reflect.Value) bool {
+	switch vv := v.Interface().(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		if vv != 0 {
+			return true
+		}
+	case string:
+		if vv != "" {
+			return true
+		}
+	case float32, float64:
+		if vv != 0.0 {
+			return true
+		}
+	default:
+		return false
+	}
+	return false
+}
+
+func (this *gzorm) Insert(m interface{}) (int64, error) {
+	insertSql := "insert into " + this.tablePrefix + this.tableName + " ("
+	fieldSql := ""
+	paramsSql := ""
+	var insertParams []interface{}
+	t := reflect.TypeOf(m)
+	v := reflect.ValueOf(m)
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		value := v.Field(i)
+		tagField := field.Tag.Get("field") //get customer field name if it exists
+		if selectFieldsCheck(value) {
+			if tagField != "" {
+				fieldSql += tagField + ","
+			} else {
+				fieldSql += strings.ToLower(field.Name) + ","
+			}
+			paramsSql += "?,"
+			insertParams = append(insertParams, value.Interface())
+		}
+	}
+	fieldSql = strings.TrimRight(fieldSql, ",")
+	paramsSql = strings.TrimRight(paramsSql, ",")
+	insertSql += fieldSql + ") values (" + paramsSql + ")"
+	log.Println(insertSql)
+	if this.txIsBegin {
+		stmt, err := this.tx.Prepare(insertSql)
+		if err != nil {
+			return 0, err
+		}
+		result, err := stmt.Exec(insertParams...)
+		if err != nil {
+			return 0, err
+		}
+		lastInsertId, _ := result.LastInsertId()
+		return lastInsertId, nil
+	} else {
+		stmt, err := this.db.Prepare(insertSql)
+		if err != nil {
+			return 0, err
+		}
+		result, err := stmt.Exec(insertParams...)
+		if err != nil {
+			return 0, err
+		}
+		lastInsertId, _ := result.LastInsertId()
+		return lastInsertId, nil
+	}
 
 }
 
-/*
+//update tableName set bookname = ?, booknumber = ? where id = ?
+func (this *gzorm) Update(m interface{}) (int64, error) {
+	updateSql := "update " + this.tablePrefix + this.tableName + " set "
+	fieldSql := ""
+	t := reflect.TypeOf(m)
+	v := reflect.ValueOf(m)
+	var updateParams []interface{}
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		value := v.Field(i)
+		tagField := field.Tag.Get("field") //get customer field name if it exists
+		if selectFieldsCheck(value) {
+			if tagField != "" {
+				fieldSql += tagField + " = ?,"
+			} else {
+				fieldSql += strings.ToLower(field.Name) + " = ?,"
+			}
+			updateParams = append(updateParams, value.Interface())
+		}
+	}
+	fieldSql = strings.TrimRight(fieldSql, ",")
+	updateSql += fieldSql
 
-
-
-
-func (this *gzorm) Update(m interface{}) (int, error) {
+	// add conditions
+	if this.where != "" {
+		updateSql += " where " + this.where
+	}
+	// for _, pv := range this.params {
+	// 	updateParams = append(updateParams, pv)
+	// }
+	updateParams = append(updateParams, this.params...)
+	if this.txIsBegin {
+		db := this.tx
+		stmt, err := db.Prepare(updateSql)
+		if err != nil {
+			return 0, err
+		}
+		result, err := stmt.Exec(updateParams...)
+		if err != nil {
+			return 0, err
+		}
+		num, err := result.RowsAffected()
+		if err != nil {
+			return 0, err
+		}
+		return num, nil
+	} else {
+		db := this.db
+		stmt, err := db.Prepare(updateSql)
+		if err != nil {
+			return 0, err
+		}
+		result, err := stmt.Exec(updateParams...)
+		if err != nil {
+			return 0, err
+		}
+		num, err := result.RowsAffected()
+		if err != nil {
+			return 0, err
+		}
+		return num, nil
+	}
 
 }
 
-
-
-func (this *gzorm) BeginTran() *gzorm {
-
+func (this *gzorm) Delete() (int64, error) {
+	deleteSql := "DELETE FROM " + this.tablePrefix + this.tableName
+	if this.where != "" {
+		deleteSql += " where " + this.where
+	}
+	if this.txIsBegin {
+		db := this.tx
+		stmt, err := db.Prepare(deleteSql)
+		if err != nil {
+			return 0, err
+		}
+		res, err := stmt.Exec(this.params...)
+		if err != nil {
+			return 0, err
+		}
+		num, err := res.RowsAffected()
+		if err != nil {
+			return 0, err
+		}
+		return num, nil
+	} else {
+		db := this.db
+		stmt, err := db.Prepare(deleteSql)
+		if err != nil {
+			return 0, err
+		}
+		res, err := stmt.Exec(this.params...)
+		if err != nil {
+			return 0, err
+		}
+		num, err := res.RowsAffected()
+		if err != nil {
+			return 0, err
+		}
+		return num, nil
+	}
 }
 
-func (this *gzorm) Commit() *gzorm {
-
+func (this *gzorm) BeginTran() error {
+	tx, err := this.db.Begin()
+	if err != nil {
+		return err
+	}
+	this.tx = tx
+	this.txIsBegin = true
+	return nil
 }
 
-func (this *gzorm) Rollback() *gzorm {
-
+func (this *gzorm) Commit() {
+	this.tx.Commit()
+	// this.tx = nil
+	this.txIsBegin = false
 }
-*/
+
+func (this *gzorm) Rollback() {
+	this.tx.Rollback()
+	// this.tx = nil
+	this.txIsBegin = false
+}

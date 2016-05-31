@@ -58,5 +58,22 @@ func main() {
 	}
 	defer db.Close()
 	// Insert(db)
-	Find(db)
+	// Find(db)
+
+	tx, err := db.Begin()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer tx.Rollback()
+	stmt, err := tx.Prepare("insert into db_books (bookname, booknumber) values (?,?)")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	stmt.Exec("tttt", 100)
+	stmt, err = tx.Prepare("insert into db_books (bookname, booknumber) values (?,?)")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	stmt.Exec("hhhh", 11100)
+	tx.Commit()
 }
