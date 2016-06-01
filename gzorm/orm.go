@@ -61,7 +61,7 @@ type X struct {
 }
 
 func main() {
-	o := NewOrm()
+	o := NewOrm("root:123456@tcp(127.0.0.1:3306)/test?charset=utf8")
 	where := []interface{}{0, "1"}
 	o.RegisterModel(Book{}).SetTablePrefix("db_")
 
