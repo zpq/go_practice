@@ -1,14 +1,13 @@
 package main
 
 import (
-	"./core/model"
 	"fmt"
+	"go_practice/seckill/core/orm"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"strings"
-	"time"
 )
 
 type SecKillServer struct {
@@ -87,18 +86,20 @@ func loadTemplateHtml(w http.ResponseWriter, tempName string, data interface{}) 
 }
 
 func main() {
-	db := model.NewDb()
-	log.Println(db)
-	now := time.Now().Format("2006-01-02 15:04:05")
-	product := model.Product{
-		Name:       "iphone6",
-		Stock:      1000,
-		End_time:   now,
-		Start_time: now,
+	o := orm.NewOrm("root:123456@tcp(127.0.0.1:3306)/test?charset=utf8")
+	log.Println(o)
+	type Book struct {
+		Id            int
+		Bookname      string
+		Booknumber    int
+		Status        int8
+		BookIntroduce string `field:"book_introduce"`
 	}
-	log.Println(product)
-
-	model.Insert(db, product)
+	ret, err := o.RegisterModel(Book{}).SetTablePrefix("db_").FindOne()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	log.Println(ret)
 	s := &SecKillServer{http.HandlerFunc(myHandler)}
 	http.ListenAndServe(":8008", s)
 }
