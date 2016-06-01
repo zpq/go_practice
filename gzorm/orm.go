@@ -120,8 +120,8 @@ func main() {
 	// oo.Commit()
 }
 
-func connect() *sql.DB {
-	db, err := sql.Open("mysql", "root:123456@tcp(127.0.0.1:3306)/test?charset=utf8")
+func connect(dsn string) *sql.DB {
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -132,18 +132,20 @@ func connect() *sql.DB {
 	return db
 }
 
-func NewOrm() *gzorm {
-	return &gzorm{db: connect()}
+func NewOrm(dsn string) *gzorm {
+	return &gzorm{db: connect(dsn)}
 }
 
 func (this *gzorm) SetTablePrefix(s string) *gzorm {
 	this.tablePrefix = s
+	this.from = this.tablePrefix + this.tableName
 	return this
 }
 
 func (this *gzorm) RegisterModel(m interface{}) *gzorm {
 	f := reflect.TypeOf(m)
 	this.tableName = strings.ToLower(f.Name())
+	this.from = this.tableName
 	return this
 }
 
@@ -204,7 +206,11 @@ func (this *gzorm) FindAll() ([]map[string]interface{}, error) {
 func (this *gzorm) setSql(rawSql string) string {
 	var sqlText string
 	if rawSql == "" {
-		sqlText = "select " + this.fields + " from " + this.from
+		if this.fields == "" {
+			sqlText = "select * from " + this.from
+		} else {
+			sqlText = "select " + this.fields + " from " + this.from
+		}
 		if this.where != "" {
 			sqlText += " where " + this.where
 		}
