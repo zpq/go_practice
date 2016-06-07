@@ -6,28 +6,20 @@ import (
 
 func letterSystem(num int) string {
 	letter := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
-	shang := num / 26
-	yushu := num % 26
-	if shang <= 26 {
-		if shang == 0 {
-			return letter[yushu-1]
-		}
-		if yushu == 0 && shang == 1 {
-			return "Z"
-		}
-		if yushu == 0 && shang > 1 {
-			return letter[shang-2] + "Z"
-		}
-		return letter[shang-1] + letter[yushu-1]
+	llen := len(letter)
+	shang := num / llen
+	yushu := num % llen
+	if shang == 0 {
+		return letter[yushu]
 	} else {
-		return letter[25] + letterSystem((shang-26)*26+yushu)
+		return letterSystem(shang) + letter[yushu]
 	}
 }
 
 func main() {
-	for i := 1; i < 1000; i++ {
+	for i := 0; i < 1000; i++ {
 		fmt.Println(i, " = ", letterSystem(i))
-		if i%26 == 0 {
+		if (i+1)%26 == 0 {
 			fmt.Println("进位")
 		}
 	}
