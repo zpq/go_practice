@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>upload</title>
+    </head>
+    <body>
+        <form action="/upload" enctype="multipart/form-data" method="post">
+            <input type="file" name="file">
+            <input type="hidden" name="token" value="{{.}}">
+            <input type="submit" name="submit" value="submit">
+        </form>
+    </body>
+</html>

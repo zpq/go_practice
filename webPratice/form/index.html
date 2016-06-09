@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>go web</title>
+    </head>
+    <body>
+        <form class="" action="/index" method="post">
+            username: <input type="text" name="name" value=""><br/>
+            password: <input type="password" name="password"><br/>
+            <input type="hidden" name="token" value="{{.}}">
+            <input type="submit" name="submit" value="submit">
+        </form>
+    </body>
+</html>
