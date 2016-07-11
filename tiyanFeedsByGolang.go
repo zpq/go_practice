@@ -233,7 +233,7 @@ func coreHandler(hash, origin_af_mobile int, recomIds, pa_names, ips []string, h
 
 var wg sync.WaitGroup
 
-const InsertLen int = 10000
+const InsertLen int = 100000
 
 var tiyanurl string = "http://m.tiyan.qiaohu.com"
 
