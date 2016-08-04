@@ -118,6 +118,16 @@ func coreHandler(hash, origin_af_mobile int, recomIds, pa_names, ips []string, h
 		hash += 10
 	}
 
+	//构建推荐人手机号
+	var recomMobiles []int
+	tmpRecomMobile := origin_af_mobile
+	recomMobilesLen := InsertLen * 10
+	for i := 0; i < recomMobilesLen; i++ {
+		recomMobiles = append(recomMobiles, tmpRecomMobile)
+		tmpRecomMobile++
+	}
+
+
 	recomIds_len, pa_names_len, ips_lenm, hds_len, lms_len, sources_len, way_len := len(recomIds)-1, len(pa_names)-1, len(ips)-1, len(hds)-1, len(lms)-1, len(sources)-1, len(way)-1
 
 	for i := 0; i < InsertLen; i++ {
@@ -171,6 +181,7 @@ func coreHandler(hash, origin_af_mobile int, recomIds, pa_names, ips []string, h
 				}
 				applyform.Recom_id = recomIds[rand.Intn(recomIds_len)]
 				applyform.Ref_mobile = applyform.Af_mobile
+				applyform.Ref_mobile = strconv.Itoa(recomMobiles[rand.Intn(recomMobilesLen)])
 				log_visit.Recom_id = applyform.Recom_id
 				log_visit.Source = applyform.Source
 			} else {
@@ -233,7 +244,7 @@ func coreHandler(hash, origin_af_mobile int, recomIds, pa_names, ips []string, h
 
 var wg sync.WaitGroup
 
-const InsertLen int = 100000
+const InsertLen int = 5000
 
 var tiyanurl string = "http://m.tiyan.qiaohu.com"
 
