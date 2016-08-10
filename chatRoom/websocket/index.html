@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>websocket</title>
+    </head>
+    <body>
+        <div id="container">
+
+        </div>
+        <div class="tool">
+            <input type="text" name="name" value="" id="content">
+            <button type="button" name="button" id="send">send</button>
+        </div>
+
+        <script>
+
+        if(window.WebSocket) {
+            var container = document.getElementById("container");
+            var ws = new WebSocket("{{.}}")
+            ws.onopen = function(evt) {
+                console.log("connect success");
+                ws.send("hello!");
+            }
+
+            ws.onclose = function(evt) {
+                console.log("connect down");
+                ws = null;
+            }
+
+            document.getElementById("send").onclick = function() {
+                var message = document.getElementById("content").value;
+                ws.send(message);
+                document.getElementById("content").value = '';
+            }
+
+            ws.onmessage = function(evt) {
+                console.log("receive from serve : " + evt.data);
+                var d = document.createElement("p");
+                d.innerHTML = evt.data;
+                container.appendChild(d);
+            }
+
+            ws.onerror = function(evt) {
+                console.log("ERROR: " + evt.data);
+            }
+        } else {
+            document.write("Sorry! Your browers does not support websocket!");
+        }
+
+        </script>
+    </body>
+</html>
