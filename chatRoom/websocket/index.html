@@ -17,7 +17,8 @@
 
         if(window.WebSocket) {
             var container = document.getElementById("container");
-            var ws = new WebSocket("{{.}}")
+            // var ws = new WebSocket("{{.}}")
+            var ws = new WebSocket("ws:\/\/localhost:8008\/echo")
             ws.onopen = function(evt) {
                 console.log("connect success");
                 ws.send("hello!");
