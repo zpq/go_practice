@@ -1,7 +1,7 @@
 <template lang="html">
     <div>
-        <chat-panel room-id="this.room.id"></chat-panel>
-        <user-list room-id="this.room.id"></user-list>
+        <chat-panel :room-id="room.id"></chat-panel>
+        <user-list :room-id="room.id"></user-list>
     </div>
 </template>
 

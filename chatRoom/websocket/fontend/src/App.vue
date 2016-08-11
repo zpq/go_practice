@@ -3,7 +3,13 @@
         <div id="header">
             <div>
                 <a v-link="{ name: 'list' }">view list</a> |
-                <a v-link="{ name: 'index' }">go index</a>
+                <a v-link="{ name: 'index' }">index</a> |
+                <template v-if="user.isLogin">
+                    <a  href="#">{{ user.username }}</a>
+                </template>
+                <template v-else>
+                    <a v-link="{ name: 'login' }">login</a>
+                </template>
             </div>
         </div>
         <div id="container">
@@ -15,6 +21,14 @@
 <script>
 
   export default {
+      data () {
+          return {
+                user : {
+                    username : '',
+                    isLogin : false,
+                },
+            }
+      },
       components:{
           //若还有更多的组件，只需要在import的情况下，以逗号分割，继续注册就好
       },
@@ -24,11 +38,13 @@
           }
       },
       ready() {
-        //   $.get("http://localhost:8008/getToken", function(res) {
-        //       console.log(res)
-        //   }, function(res) {
-        //       console.log(res)
-        //   });
+          let username = window.localStorage.getItem('chatRoom_username')
+          if (username) {
+              this.user = {
+                  username : username,
+                  isLogin : true
+              }
+          }
       }
   }
 </script>

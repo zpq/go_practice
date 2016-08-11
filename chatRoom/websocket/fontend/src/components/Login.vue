@@ -19,6 +19,7 @@ export default {
   attached: function () {},
   methods: {
       login : function() {
+          var _vm = this;
           $.ajax({
             url : "http://localhost:8008/login",
             type : 'POST',
@@ -26,12 +27,12 @@ export default {
             dataType : "json",
             success : function(res) {
                 console.log(res)
-                if (res.Status == 1) {
-                    window.localStorage.setItem('chatRoom_username', res.data.Username)
-                    window.localStorage.setItem('chatRoom_token', res.data.Token)
-                    alert(res.data[0].Username)
+                if (res.status == 1) {
+                    window.localStorage.setItem('chatRoom_username', res.data[0].username)
+                    window.localStorage.setItem('chatRoom_token', res.data[0].token)
+                    _vm.$route.router.go({name:'list'})
                 } else {
-                    alert(res.Message)
+                    alert(res.message)
                 }
             },
             error : function (res) {

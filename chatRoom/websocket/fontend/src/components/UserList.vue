@@ -5,6 +5,7 @@
                 {{ user.name }}
             </li>
         </ul>
+        {{roomId}}
     </div>
 </template>
 
@@ -13,7 +14,7 @@
       data: function () {
         return {
             room : {
-                Id : 1
+                Id : ''
             },
             userLists : {}
         }
@@ -24,6 +25,7 @@
             // $.getJSON(url, {roomId : this.room.Id}, function(data, status, xhr) {
             //     this.$set("userlists", JSON.Parse(data))
             // });
+            this.room.Id = roomId
       },
       attached: function () {},
       methods: {},

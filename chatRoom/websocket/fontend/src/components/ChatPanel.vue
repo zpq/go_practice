@@ -45,9 +45,10 @@ export default {
 
               ws.onmessage = function(ev) {
                   displayMessage.append("<p>" + ev.data + "</p>");
-                  displayMessage.scrollTop(displayMessage.height()); //使滚动条在最底部
+                //   displayMessage.scrollTop(displayMessage.height()); //使滚动条在最底部
+                console.log(displayMessage[0].scrollHeight)
+                  displayMessage[0].scrollTop = displayMessage[0].scrollHeight; //使滚动条在最底部
               }
-
           } else {
               document.write("Sorry! Your browsers does not support websocket!");
           }
@@ -56,8 +57,10 @@ export default {
       attached: function () {},
       methods: {
         sendMessage : function() {
-            this.ws.send(this.message);
-            this.message = '';
+            if ($.trim(this.message) !== '') {
+                this.ws.send(this.message);
+                this.message = '';
+            }
         }
       },
       components: {}
@@ -72,9 +75,10 @@ export default {
     width: 600px;
 }
 #displayMessage {
-    height : 200px;
+    height : 500px;
     border : 1px solid #abcdef;
     overflow-y:auto;
+    word-wrap:break-word;
 }
 #sendTools {
     margin-top: 20px;

@@ -13,6 +13,9 @@ import (
 	"time"
 )
 
+var clients map[string]*websocket.Conn
+var users map[string]*User
+
 var tokenEncodeString string = "helloworld"
 var addr = flag.String("addr", "localhost:8008", "http service address")
 var upgrader = websocket.Upgrader{
@@ -21,15 +24,29 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     myCheckOrigin,
 }
 
+type User struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	RoomId   string `json:"roomId"`
+	Token    string `json:"token"`
+}
+
+type Room struct {
+	Name    string
+	Cap     int
+	UserNum int
+	IsOpen  bool
+}
+
 type Res struct {
-	Status  int
-	Message string
-	Data    []interface{}
+	Status  int           `json:"status"`
+	Message string        `json:"message"`
+	Data    []interface{} `json:"data"`
 }
 
 type LoginRes struct {
-	Username string
-	Token    string
+	Username string `json:"username"`
+	Token    string `json:"token"`
 }
 
 // allow cross domain request
@@ -39,8 +56,6 @@ func myCheckOrigin(req *http.Request) bool {
 	// }
 	return true
 }
-
-var clients map[string]*websocket.Conn
 
 func echo(w http.ResponseWriter, r *http.Request) {
 	// log.Println(r.Host)
@@ -105,15 +120,13 @@ func login(w http.ResponseWriter, r *http.Request) {
 	username := r.PostFormValue("username")
 	password := r.PostFormValue("password")
 
-	log.Println(username + " --- " + password)
-
 	res := Res{}
 	res.Status = 0
 	res.Message = "failed"
 	if username == "admin" && password == "admin" {
 		res.Status = 1
 		res.Message = "login success"
-		lr := LoginRes{username, getToken()}
+		lr := LoginRes{username, getToken(username)}
 		res.Data = append(res.Data, lr)
 	}
 	body, _ := json.Marshal(res)
@@ -121,8 +134,6 @@ func login(w http.ResponseWriter, r *http.Request) {
 }
 
 func checkToken(w http.ResponseWriter, r *http.Request) {
-	// sample token string taken from the New example
-
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Headers", "Authorization")
 
@@ -148,12 +159,13 @@ func checkToken(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getToken() string {
+func getToken(username string) string {
 	// w.Header().Set("Access-Control-Allow-Methods", "*")
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"foo": "bar",
-		"nbf": time.Date(2015, 10, 10, 12, 0, 0, 0, time.UTC).Unix(),
-		"exp": time.Now().Add(time.Hour * 1).Unix(),
+		"foo":      "bar",
+		"username": username,
+		"nbf":      time.Date(2015, 10, 10, 12, 0, 0, 0, time.UTC).Unix(),
+		"exp":      time.Now().Add(time.Hour * 1).Unix(),
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
