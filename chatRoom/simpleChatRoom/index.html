@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>websocket</title>
+        <script type="text/javascript" src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+        <script src="http://cdnjs.cloudflare.com/ajax/libs/vue/1.0.26/vue.min.js"></script>
+        <style media="screen">
+            #container {
+                width: 800px;
+                font-size: 14px;
+                margin: 10px auto;
+            }
+            #header-left{
+                width : 20%;
+                display: inline-block;
+            }
+            #nameBlock{
+                width : 70%;
+                display: inline-block;
+                text-align: right;
+            }
+            #body{
+                display:flex;
+                align-items:flex-start;
+            }
+            #left {
+                width: 500px;
+                height : 500px;
+                display: inline-block;
+            }
+            #right {
+                width: 250px;
+                height: 500px;
+                margin-left: 40px;
+                display: inline-block;
+                border: 1px solid grey;
+            }
+            #content{
+                height : 450px;
+                padding: 5px;
+                border: 1px solid grey;
+                margin-bottom: 10px;
+            }
+            #send-tool{
+                padding: 5px;
+            }
+            #footer{
+                width: 100%;
+                color: #549895;
+                font-size: 16px;
+                font-weight: bold;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <div id="header">
+                <div id="header-left"><h3>welcome to XCroom</h3></div>
+                <div id="nameBlock">
+                    <div v-if="!isLogin" id="notlogin">
+                        type your nickname : <input type="text" v-model="tusername">
+                        <button @click="login">begin</button>
+                    </div>
+                    <div v-if="isLogin" id="islogin">
+                        <h3>[[ username ]]</h3>
+                    </div>
+                </div>
+                <hr>
+            </div>
+            <div id="body">
+                <div id="left">
+                    <div id="content">
+
+                    </div>
+                    <div id="send-tool">
+                        <input type="text" v-model="inputMessage">
+                        <button @click="send">send</button>
+                    </div>
+                </div>
+                <div id="right">
+                    <p v-for="user in userLists">[[ user.name ]]</p>
+                </div>
+            </div>
+            <div id="footer">
+                <hr>
+                <p>go websocket @2016</p>
+            </div>
+        </div>
+
+        <script>
+
+        Vue.config.delimiters = ['[[', ']]']
+        var vm = new Vue({
+            el : "#container",
+            data : {
+                tusername : '',
+                username : "",
+                isLogin :false,
+                ws : null,
+                inputMessage : '',
+                userLists : [],
+            },
+            methods : {
+                websocket : function (username) {
+                    if (!window.WebSocket) {
+                        document.write("Sorry! Your browser does not support websocket!");
+                        return;
+                    }
+                    var ws = new WebSocket("{{.}}");
+                    this.ws = ws;
+                    var _vm = this;
+                    ws.onopen = function(evt) {
+                        console.log("connecting : " + evt)
+                    }
+                    ws.onclose = function(evt) {
+                        console.log("connect down");
+                        ws = null;
+                        _vm.ws = null;
+                    }
+                    ws.onerror = function(evt) {
+                        console.log("ERROR: " + evt.data);
+                    }
+                    ws.onmessage = function(evt) {
+                        var datas = JSON.parse(evt.data)
+                        if (datas.status == 1) { // receive message
+                            $("#content").append("<p>" + datas.data[0] + "</p>");
+                            $("#content")[0].scrollTop = $("#content")[0].scrollHeight;
+                        } else if (datas.status == 2) { //refresh userlists
+                            _vm.$set('userLists', datas.data);
+                        }
+                    }
+                },
+                login : function() {
+                    var _vm = this
+                    $.ajax({
+                        url : "/login",
+                        type : 'POST',
+                        data : {username : _vm.tusername},
+                        dataType : "json",
+                        success : function(res) {
+                            if (res.status == 1) {
+                                _vm.username = _vm.tusername
+                                _vm.isLogin = true
+                                _vm.tusername = '';
+                                _vm.userLists.push(res.data[0])
+                                _vm.websocket();
+                            } else {
+                                alert(res.message)
+                            }
+                        },
+                        error : function(res) {
+                            console.log(res)
+                        }
+                    });
+                },
+                send : function() {
+                    if ($.trim(this.inputMessage) !== '') {
+                        this.ws.send(this.inputMessage)
+                        this.inputMessage = '';
+                    }
+                }
+            }
+        })
+
+        </script>
+    </body>
+</html>
