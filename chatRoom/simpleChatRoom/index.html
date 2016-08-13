@@ -41,6 +41,7 @@
                 padding: 5px;
                 border: 1px solid grey;
                 margin-bottom: 10px;
+                overflow-y:auto;
             }
             #send-tool{
                 padding: 5px;
@@ -58,12 +59,12 @@
             <div id="header">
                 <div id="header-left"><h3>welcome to XCroom</h3></div>
                 <div id="nameBlock">
-                    <div v-if="!isLogin" id="notlogin">
-                        type your nickname : <input type="text" v-model="tusername">
-                        <button @click="login">begin</button>
+                    <div v-if="isLogin == '1'" id="islogin">
+                        <h3>[[username]]</h3>
                     </div>
-                    <div v-if="isLogin" id="islogin">
-                        <h3>[[ username ]]</h3>
+                    <div v-else id="notlogin">
+                        type your nickname : <input type="text" v-model="tusername">
+                        <button @click="login">connect</button>
                     </div>
                 </div>
                 <hr>
@@ -95,41 +96,55 @@
             el : "#container",
             data : {
                 tusername : '',
-                username : "",
-                isLogin :false,
+                username : "{{.Username}}",
+                isLogin : "{{.IsLogin}}",
                 ws : null,
                 inputMessage : '',
                 userLists : [],
             },
+            ready () {
+                if (this.username !== '') {
+                    this.websocket();
+                }
+            },
             methods : {
-                websocket : function (username) {
+                websocket : function () {
                     if (!window.WebSocket) {
                         document.write("Sorry! Your browser does not support websocket!");
                         return;
                     }
-                    var ws = new WebSocket("{{.}}");
+                    console.log("begin websocket")
+                    var ws = new WebSocket("{{.Url}}");
                     this.ws = ws;
                     var _vm = this;
                     ws.onopen = function(evt) {
                         console.log("connecting : " + evt)
+                        ws.send("ping")
                     }
                     ws.onclose = function(evt) {
                         console.log("connect down");
-                        ws = null;
-                        _vm.ws = null;
+                        _vm.ws.close();
+                        _vm.username = ''
+                        _vm.isLogin = 0
                     }
                     ws.onerror = function(evt) {
                         console.log("ERROR: " + evt.data);
+                        _vm.username = ''
+                        _vm.isLogin = 0
                     }
                     ws.onmessage = function(evt) {
                         var datas = JSON.parse(evt.data)
                         if (datas.status == 1) { // receive message
-                            $("#content").append("<p>" + datas.data[0] + "</p>");
+                            console.log(datas.status)
+                            $("#content").append("<p>" + datas.data[0].content + "</p>");
                             $("#content")[0].scrollTop = $("#content")[0].scrollHeight;
                         } else if (datas.status == 2) { //refresh userlists
+                            console.log(datas.status)
+                            console.log(datas.data)
                             _vm.$set('userLists', datas.data);
                         }
                     }
+
                 },
                 login : function() {
                     var _vm = this
@@ -155,9 +170,23 @@
                     });
                 },
                 send : function() {
+                    if (this.username === "") {
+                        alert("Please input your nickname")
+                        return
+                    }
                     if ($.trim(this.inputMessage) !== '') {
-                        this.ws.send(this.inputMessage)
-                        this.inputMessage = '';
+                        if (this.ws.readyState !== 1) {
+                            // console.log("colse!!!!")
+                            // this.ws.close();
+                            // this.websocket();
+                            // setTimeout(function() {
+                            //     this.ws.send(this.inputMessage)
+                            //     this.inputMessage = '';
+                            // }, 250);
+                        } else {
+                            this.ws.send(this.inputMessage)
+                            this.inputMessage = '';
+                        }
                     }
                 }
             }
