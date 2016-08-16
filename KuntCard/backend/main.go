@@ -28,7 +28,9 @@ const (
 	serverhost           string = ":8008"
 	validRemoteHosts     string = "localhost:8088"
 	reconnectionDeadline        = 60
-	errorResType                = 0
+	errorResType                = 0 // parse websocket message type
+	successResType              = 1
+	messageResType              = 2
 	closeResType                = 8
 )
 
@@ -96,6 +98,7 @@ type Card struct {
 	ComputeDamage int    `json:"computeDamage"`
 	IsUsed        bool   `json:"isUsed"`
 	IsActive      bool   `json:"isActive"` //是否正在被使用
+	Description   string `json:"description"`
 }
 
 func myCheckOrigin(r *http.Request) bool {
@@ -176,6 +179,7 @@ func Ws(w http.ResponseWriter, r *http.Request) {
 			log.Println(err.Error())
 			break
 		}
+		user.LastAlive = time.Now().Unix()
 		dataParse(string(msg)) // data parse
 
 		writeSignal <- string(msg)
