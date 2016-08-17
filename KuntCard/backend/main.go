@@ -6,13 +6,15 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/websocket"
 	"log"
+	"math/rand"
 	"net/http"
 	"strings"
 	"time"
 )
 
 var (
-	rooms    []*Room
+	allCards map[int][]*Card
+	rooms    map[int]*Room
 	users    map[string]*User
 	clients  map[string]*websocket.Conn
 	upgrader = websocket.Upgrader{
@@ -21,6 +23,7 @@ var (
 		CheckOrigin:     myCheckOrigin,
 	}
 	writeSignal chan string
+	roomSignal  chan int
 )
 
 const (
@@ -51,9 +54,10 @@ type Room struct {
 }
 
 type Battle struct {
-	turn        string         //下一次请求应该是谁的，不符合的认定为非法请求，不予处理(使用user的token来区分)
-	Weather     int            `json:"weather"`
-	BattleScore map[string]int `json:"battleScore"` // exp:[username]2
+	cuser       string //当前的请求应该是谁的，不符合的认定为非法请求，不予处理(使用user的token来区分)
+	turn        int
+	Weather     []int          `json:"weather"`
+	BattleScore map[string]int `json:"battleScore"` // exp:[username] => 2
 }
 
 type User struct {
@@ -61,6 +65,7 @@ type User struct {
 	Name         string `json:"name"`
 	password     string
 	token        string
+	RoomId       int          `json:"roomId"`
 	LastAlive    int64        `json:"lastAlive"`
 	IsOnline     bool         `json:"isOnLine"`
 	CardInfo     CardInfo     `json:"cardInfo"`
@@ -68,13 +73,16 @@ type User struct {
 }
 
 type CardInfo struct {
-	TotalCards    []*Card `json:"totalCards"`
-	UsedCards     []*Card `json:"usedCards"`
-	UnUsedCards   []*Card `json:"unUsedCards"`
-	InfantryCards []*Card `json:"infantryCards"` // active card
-	ArcherCards   []*Card `json:"archerCards"`   // active card
-	SlingCards    []*Card `json:"slingCards"`    // active card
-	TotalDamage   int     `json:"totalDamage"`
+	TotalCards  []*Card `json:"totalCards"`
+	UsedCards   []*Card `json:"usedCards"`
+	UnUsedCards []*Card `json:"unUsedCards"` // card which can use
+	ActiveCards []*Card `json:"activeCards"`
+	// InfantryCards []*Card       `json:"infantryCards"` // active card
+	// ArcherCards   []*Card       `json:"archerCards"`   // active card
+	// SlingCards    []*Card       `json:"slingCards"`    // active card
+	WeatherCards []*Card       `json:"weatherCards"`
+	BufferCards  map[int]*Card `json:"bufferCards"` // key => card position
+	TotalDamage  int           `json:"totalDamage"`
 }
 
 type FightHistory struct { // 2-0 => 2;  2-1=>1; 1-2 => 0; 0-2 => -1  (0-2 common happened in run away)
@@ -86,20 +94,24 @@ type FightHistory struct { // 2-0 => 2;  2-1=>1; 1-2 => 0; 0-2 => -1  (0-2 commo
 }
 
 type Card struct {
-	Id            int    `json:"id"`
-	Name          string `json:"name"`
-	IsHero        bool   `json:"jsHero"`        //英雄卡
-	IsSpy         bool   `json:"isSpy"`         //间谍卡
-	GroupType     int    `json:"groupType"`     //卡组类型
-	UnitType      int    `json:"unitType"`      //卡牌类型 0:weather 1:infantry 2:archer 3:sling
-	WeatherEffect int    `json:"weatherEffect"` //天气类型 0:sun 1:debuff infantry 2:debuff archer  3:debuff sling
-	BufferEffect  int    `json:"bufferEffect"`  //自带buff (maybe use callfunc)
-	BaseDamage    int    `json:"baseDamage"`
-	ComputeDamage int    `json:"computeDamage"`
-	IsUsed        bool   `json:"isUsed"`
-	IsActive      bool   `json:"isActive"` //是否正在被使用
-	Description   string `json:"description"`
+	Id            int          `json:"id"`  // unique identify
+	Cid           int          `json:"cid"` //
+	Name          string       `json:"name"`
+	IsHero        bool         `json:"jsHero"`        //英雄卡
+	IsSpy         bool         `json:"isSpy"`         //间谍卡
+	GroupType     int          `json:"groupType"`     //卡组类型
+	UnitType      int          `json:"unitType"`      //卡牌类型 0:weather 1:infantry 2:archer 3:sling 4:buffer
+	BrotherId     int          `json:"brotherId"`     //兄弟卡，一起出现有奇效！
+	WeatherEffect int          `json:"weatherEffect"` //天气类型 0:sun 1:debuff infantry 2:debuff archer  3:debuff sling
+	bufferEffect  BufferEffect //自带buff (use callback)
+	BaseDamage    int          `json:"baseDamage"`
+	ComputeDamage int          `json:"computeDamage"`
+	IsUsed        bool         `json:"isUsed"`
+	IsActive      bool         `json:"isActive"` //是否正在被使用
+	Description   string       `json:"description"`
 }
+
+type BufferEffect func(card *Card, room *Room) error
 
 func myCheckOrigin(r *http.Request) bool {
 	if r.Host == validRemoteHosts {
@@ -152,6 +164,8 @@ func Ws(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check whether user has a peice of cardGroup
+
 	_, ok := clients[token]
 	if !ok {
 		clients[token] = conn
@@ -186,12 +200,12 @@ func Ws(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func dataParse(msg string) {
-
-}
-
 func write(conn *websocket.Conn, isNew bool) {
 	conn.WriteJSON(<-writeSignal)
+}
+
+func dataParse(msg string) {
+
 }
 
 func dispatchRoom(user *User, conn *websocket.Conn) {
@@ -329,6 +343,151 @@ func checkToken(tokenString string) (jwt.MapClaims, error) {
 	}
 }
 
+//user select cards
+func selectCards(w http.ResponseWriter, r *http.Request) {
+	// allCards map[int][]*Card
+	w.Header().Set("Access-Control-Allow-Origin", validRemoteHosts)
+	c, err := r.Cookie("kunt-token")
+	if err != nil { // need login
+		log.Println("no token exist")
+	}
+
+	token := c.Value
+	tc, err := checkToken(token)
+	if err != nil { //need login
+		log.Println("invalid token")
+	}
+
+	username := tc["username"].(string)
+	user := users[token]
+	if user.Name != username { // need login
+		log.Println("username not match between token and server stored")
+	}
+
+	r.ParseForm()
+	cards := r.PostFormValue("cards")
+	log.Printf("%T\n", cards)
+
+	l := len(cards)
+	for i := 0; i < l; i++ {
+
+	}
+
+}
+
+//calculate points
+func calPoints(room *Room) {
+
+}
+
+func deleteCardFromCardsById(cards []*Card, id int) {
+	l := len(cards)
+	var index int
+	for i := 0; i < l; i++ {
+		if id == cards[i].Id {
+			index = i
+		}
+	}
+	if l > 0 {
+		cards = append(cards[:index], cards[index+1:]...)
+	}
+}
+
+func getOpponent(room *Room) *User {
+	for i := 0; i < len(room.members); i++ {
+		if room.members[i] != room.Battle.cuser {
+			return users[room.members[i]]
+		}
+	}
+	return nil
+}
+
+func getRandomCardFromTotalCards(user *User) *Card {
+	l := len(user.CardInfo.TotalCards)
+	return user.CardInfo.TotalCards[rand.Intn(l)]
+}
+
+func clearWeatherCards(user *User) {
+	l := len(user.CardInfo.WeatherCards)
+	for i := 0; i < l; i++ {
+		user.CardInfo.UsedCards = append(user.CardInfo.UsedCards, user.CardInfo.WeatherCards[i])
+	}
+	user.CardInfo.WeatherCards = user.CardInfo.WeatherCards[l:]
+}
+
+//api
+func useCard(room *Room, card *Card) {
+	token := room.Battle.cuser // sender
+	user := users[token]
+	if card.UnitType == 0 { // is weather card
+		if card.WeatherEffect == 0 { // sum weather,clear weather card
+			room.Battle.Weather = room.Battle.Weather[len(room.Battle.Weather):] // clear slice
+			userOp := getOpponent(room)
+			if userOp == nil {
+				log.Fatal("Fatal error!No opponent exist!")
+			}
+			clearWeatherCards(user)
+			clearWeatherCards(userOp)
+		} else {
+			room.Battle.Weather = append(room.Battle.Weather, card.Id)
+			user.CardInfo.ActiveCards = append(user.CardInfo.ActiveCards, card)
+			user.CardInfo.WeatherCards = append(user.CardInfo.WeatherCards, card)
+			deleteCardFromCardsById(user.CardInfo.UnUsedCards, card.Id)
+		}
+	} else if card.UnitType == 4 { // is pury buff/debuff card
+		user.CardInfo.UsedCards = append(user.CardInfo.UsedCards, card)
+		deleteCardFromCardsById(user.CardInfo.UnUsedCards, card.Id)
+		card.bufferEffect(card, room) // excute callback
+	} else { // UnitType 1,2,3
+		if card.IsSpy {
+			deleteCardFromCardsById(user.CardInfo.UnUsedCards, card.Id)
+			deleteCardFromCardsById(user.CardInfo.TotalCards, card.Id)
+			c1, c2 := getRandomCardFromTotalCards(user), getRandomCardFromTotalCards(user)
+			user.CardInfo.UnUsedCards = append(user.CardInfo.UnUsedCards, c1)
+			user.CardInfo.UnUsedCards = append(user.CardInfo.UnUsedCards, c2)
+			userOp := getOpponent(room)
+			if userOp == nil {
+				log.Fatal("Fatal error!No opponent exist!")
+			}
+			userOp.CardInfo.TotalCards = append(userOp.CardInfo.TotalCards, card)
+			userOp.CardInfo.UnUsedCards = append(userOp.CardInfo.UnUsedCards, card)
+		} else {
+			deleteCardFromCardsById(user.CardInfo.UnUsedCards, card.Id)
+			user.CardInfo.ActiveCards = append(user.CardInfo.ActiveCards, card)
+			card.bufferEffect(card, room)
+		}
+	}
+	calPoints(room)
+}
+
+func getAllCards(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func battleBegin(room *Room) {
+	//send battle start signal
+	conn1, conn2 := clients[room.members[0]], clients[room.members[1]]
+	go write(conn1, isNew)
+	go write(conn2, isNew)
+	for {
+
+	}
+}
+
+func roomHandle() {
+	for {
+		roomId := <-roomSignal
+		go battleBegin(rooms[roomId])
+	}
+}
+
 func main() {
 
+	http.HandleFunc("/login", Login)
+	http.HandleFunc("/register", Register)
+	http.HandleFunc("/getAllCards", getAllCards)
+	http.HandleFunc("/selectCards", selectCards)
+	if err := http.ListenAndServe(serverhost, nil); err != nil {
+		log.Fatal(err.Error())
+	}
 }
