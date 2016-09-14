@@ -1,13 +1,14 @@
 package main
 
 import (
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/go-xorm/xorm"
 	"log"
 	"math/rand"
 	"strconv"
 	"sync"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-xorm/xorm"
 )
 
 type dtb_applyform struct {
@@ -127,7 +128,6 @@ func coreHandler(hash, origin_af_mobile int, recomIds, pa_names, ips []string, h
 		tmpRecomMobile++
 	}
 
-
 	recomIds_len, pa_names_len, ips_lenm, hds_len, lms_len, sources_len, way_len := len(recomIds)-1, len(pa_names)-1, len(ips)-1, len(hds)-1, len(lms)-1, len(sources)-1, len(way)-1
 
 	for i := 0; i < InsertLen; i++ {
@@ -159,6 +159,8 @@ func coreHandler(hash, origin_af_mobile int, recomIds, pa_names, ips []string, h
 		applyform.Mobile_check = rand.Intn(2)
 		applyform.Af_mobile = strconv.Itoa(origin_af_mobile + applyform.Id)
 		applyform.Pa_name = string(pa_names[rand.Intn(pa_names_len)])
+		applyform.Af_city = string(pa_names[rand.Intn(pa_names_len)])
+		applyform.Af_add = string(pa_names[rand.Intn(pa_names_len)])
 		applyform.Ip = string(ips[rand.Intn(ips_lenm)])
 		applyform.Apps = rand.Intn(2)
 		applyform.Datasource = 2
