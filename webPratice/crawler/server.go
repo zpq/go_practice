@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	dir        = "F:\\go\\workspace\\src\\go_practice\\webPratice\\room\\imgs\\"
+	dir        = "F:\\go\\workspace\\src\\go_practice\\webPratice\\crawler\\imgs\\"
 	url        = "http://www.qq.com"
 	urlRegexp  = regexp.MustCompile(`<a.*href="(.*?)"`)
 	imgRegexp  = regexp.MustCompile(`<img.*src="(.*?)"`)
