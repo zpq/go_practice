@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"math/rand"
 	"strconv"
@@ -156,11 +157,15 @@ func coreHandler(hash, origin_af_mobile int, recomIds, pa_names, ips []string, h
 		}
 
 		applyform.Id = hash + i*10
+		applyform.Bb_year = strconv.Itoa(rand.Intn(15) + 2000)
+		applyform.Bb_month = strconv.Itoa(rand.Intn(12) + 1)
+		applyform.Bb_day = strconv.Itoa(rand.Intn(30) + 1)
+		applyform.Bb_birthday = applyform.Bb_year + "-" + applyform.Bb_month + "-" + applyform.Bb_day
 		applyform.Mobile_check = rand.Intn(2)
 		applyform.Af_mobile = strconv.Itoa(origin_af_mobile + applyform.Id)
-		applyform.Pa_name = string(pa_names[rand.Intn(pa_names_len)])
+		applyform.Pa_name = string(pa_names[rand.Intn(pa_names_len)]) + string(pa_names[rand.Intn(pa_names_len)])
 		applyform.Af_city = string(pa_names[rand.Intn(pa_names_len)])
-		applyform.Af_add = string(pa_names[rand.Intn(pa_names_len)])
+		applyform.Af_add = string(pa_names[rand.Intn(pa_names_len)]) + string(pa_names[rand.Intn(pa_names_len)]) + string(pa_names[rand.Intn(pa_names_len)])
 		applyform.Ip = string(ips[rand.Intn(ips_lenm)])
 		applyform.Apps = rand.Intn(2)
 		applyform.Datasource = 2
@@ -245,18 +250,19 @@ func coreHandler(hash, origin_af_mobile int, recomIds, pa_names, ips []string, h
 }
 
 var wg sync.WaitGroup
-
-const InsertLen int = 5000
-
+var InsertLen int
 var tiyanurl string = "http://m.tiyan.qiaohu.com"
 
 func main() {
+	fc := flag.Int("c", 1000, "the number of each gorouting")
+	flag.Parse()
+	InsertLen = *fc
 	engine, err := xorm.NewEngine("mysql", "root:123456@/laiyuan2?charset=utf8")
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
 
-	pa_names := []string{"刘备", "关羽", "张飞", "赵云", "马超", "黄忠", "诸葛亮", "徐庶", "庞统", "法正", "关平", "关索", "张苞", "关兴", "马岱", "廖化", "魏延", "曹操", "荀彧", "荀攸", "郭嘉", "贾诩", "司马懿", "曹丕", "曹植", "曹冲", "夏侯惇", "夏侯渊", "许褚", "典韦", "徐晃", "张辽", "吕布", "庞德", "于禁", "乐进", "李典", "司马昭", "夏侯霸", "姜维", "钟会", "邓艾", "张颌", "颜良", "文丑", "华雄", "孙坚", "孙策", "孙权", "诸葛恪", "陆逊", "周瑜", "鲁肃", "诸葛瑾", "张昭", "吕蒙", "太史慈", "潘璋", "黄盖", "蒋干"}
+	pa_names := []string{"刘备", "关羽", "张飞", "赵云", "马超", "黄忠", "诸葛亮", "徐庶", "庞统", "法正", "关平", "关索", "张苞", "关兴", "马岱", "廖化", "魏延", "曹操", "荀彧", "荀攸", "郭嘉", "贾诩", "司马懿", "曹丕", "曹植", "曹冲", "夏侯惇", "夏侯渊", "许褚", "典韦", "徐晃", "张辽", "吕布", "庞德", "于禁", "乐进", "李典", "司马昭", "夏侯霸", "姜维", "钟会", "邓艾", "张颌", "颜良", "文丑", "华雄", "孙坚", "孙策", "孙权", "诸葛恪", "陆逊", "周瑜", "鲁肃", "诸葛瑾", "张昭", "吕蒙", "太史慈", "潘璋", "黄盖", "蒋干", "张三", "李四", "对的", "速度", "方法", "功夫", "王武", "王了", "王八", "忘旧", "两块"}
 
 	hds, _ := engine.Query("select * from dtb_lianmeng where lhtype = 1 and enableflag = 1")
 
