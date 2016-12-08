@@ -92,6 +92,7 @@ func (c *openOpenCrawler) run() {
 	log.Println("runing....")
 	c.getTags(html)
 	for k := range c.tags {
+		k := k
 		go func(k string) {
 			// c.maxCo <- true
 			// defer log.Println(<-c.maxCo)
@@ -111,10 +112,9 @@ func (c *openOpenCrawler) run() {
 			// synG.Done()
 		}(k)
 
-		go func(k string) {
-			// c.maxCo <- true
-			// defer log.Println(<-c.maxCo)
-			for {
+		for {
+			c.maxCo <- true
+			go func() {
 				url := c.urlProvider.getOneURL(k)
 				if url == "" {
 					time.Sleep(time.Second * interval)
@@ -130,8 +130,9 @@ func (c *openOpenCrawler) run() {
 					continue
 				}
 				time.Sleep(time.Second * interval)
-			}
-		}(k)
+				log.Println(<-c.maxCo)
+			}()
+		}
 	}
 }
 
