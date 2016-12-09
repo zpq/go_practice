@@ -56,7 +56,7 @@ func job() error {
 	return nil
 }
 
-var count int
+var count = 1
 var syn sync.Mutex
 
 func main() {
@@ -71,7 +71,7 @@ func main() {
 	}
 
 	//check jobs num
-	for tp.done != count {
+	for tp.done != 100 {
 		time.Sleep(time.Second * 2)
 	}
 
