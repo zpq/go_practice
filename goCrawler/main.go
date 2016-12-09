@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -37,22 +36,6 @@ func (c *openOpenCrawler) initRules() {
 	}
 }
 
-func (c *openOpenCrawler) getTags(html string) {
-	tagURL := c.rule.tagURL.FindAllStringSubmatch(html, -1)
-	for _, v := range tagURL {
-		tg := &tag{url: v[1]}
-		tagName := strings.SplitAfter(v[1], "/")
-		c.tags[tagName[len(tagName)-1]] = tg
-	}
-}
-
-func (c *openOpenCrawler) getURLList(html, tag string) {
-	articleList := c.rule.articleList.FindAllStringSubmatch(html, -1)
-	for _, v := range articleList {
-		c.urlProvider.addOneURL(tag, v[1])
-	}
-}
-
 func (c *openOpenCrawler) getArticle(html, tag string) error {
 	title := c.rule.title.FindAllStringSubmatch(html, -1)
 	article := c.rule.content.FindAllStringSubmatch(html, -1)
@@ -78,7 +61,7 @@ func (c *openOpenCrawler) getArticle(html, tag string) error {
 	if err != nil {
 		return err
 	}
-	log.Println("insert ok!" + res.Title + " " + strconv.Itoa(len(res.Content)))
+	log.Printf("insert ok! tag : %s; title : %s; length : %d", res.Tag, res.Title, len(res.Content))
 	return nil
 }
 
@@ -92,14 +75,10 @@ func (c *openOpenCrawler) run() {
 	log.Println("runing....")
 	c.getTags(html)
 	for k := range c.tags {
-		k := k
-		go func(k string) {
-			// c.maxCo <- true
-			// defer log.Println(<-c.maxCo)
-			// synG.Add(1)
+		k := k //very important
+		go func() {
 			i := 0
 			for i <= maxPage {
-				// log.Printf("i=%d\n", i)
 				body, err := c.getHTML(c.initURL + "/lib/tag/" + k + "?pn=" + strconv.Itoa(i))
 				if err != nil {
 					log.Println(err.Error())
@@ -109,54 +88,62 @@ func (c *openOpenCrawler) run() {
 				i++
 				time.Sleep(time.Second * interval * 2)
 			}
-			// synG.Done()
-		}(k)
-
-		for {
-			c.maxCo <- true
-			go func() {
-				url := c.urlProvider.getOneURL(k)
-				if url == "" {
+		}()
+		// time.Sleep(time.Second * interval * 1)
+		go func() {
+			for {
+				c.maxCo <- true
+				go func() {
+					defer func() {
+						a := <-c.maxCo
+						a = a
+					}()
+					url := strings.TrimSpace(c.urlProvider.getOneURL(k))
+					if url == "" {
+						time.Sleep(time.Second * interval)
+						return
+					}
+					body, err := c.getHTML(c.initURL + url)
+					if err != nil {
+						log.Println(err.Error())
+						return
+					}
+					err = c.getArticle(body, k)
+					if err != nil {
+						log.Println(err.Error())
+						return
+					}
 					time.Sleep(time.Second * interval)
-				}
-				body, err := c.getHTML(c.initURL + url)
-				if err != nil {
-					log.Println(err.Error())
-					continue
-				}
-				err = c.getArticle(body, k)
-				if err != nil {
-					log.Println(err.Error())
-					continue
-				}
-				time.Sleep(time.Second * interval)
-				log.Println(<-c.maxCo)
-			}()
-		}
+				}()
+			}
+		}()
 	}
 }
 
-var synG sync.WaitGroup
-
 func main() {
-	var err error
-	redisPool, err := newRedisPool("")
-	if err != nil {
-		log.Fatal("redis connection error : ", err.Error())
-	}
-	oc := &openOpenCrawler{
-		crawler: crawler{
-			initURL:     "http://www.open-open.com",
-			maxCo:       make(chan bool, maxThreadPerWebSite),
-			tags:        make(map[string]*tag),
-			urlProvider: redisPool,
-		},
-	}
 	engine, err := xorm.NewEngine("mysql", dsn)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
-	oc.db = engine
+	// redisPool, err := newRedisPool("")
+	// if err != nil {
+	// 	log.Fatal("redis connection error : ", err.Error())
+	// }
+
+	oc := &openOpenCrawler{
+		crawler: crawler{
+			db:      engine,
+			initURL: "http://www.open-open.com",
+			maxCo:   make(chan bool, maxThreadPerWebSite),
+			tags:    make(map[string]*tag),
+			// urlProvider: redisPool,
+			urlProvider: newMapStorage(),
+		},
+	}
+
 	oc.run()
 	time.Sleep(time.Second * 30)
+	// for {
+
+	// }
 }

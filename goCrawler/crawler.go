@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/go-xorm/xorm"
@@ -63,14 +64,22 @@ func (c *crawler) getHTML(url string) (string, error) {
 }
 
 func (c *crawler) getURLList(html, tag string) {
-
-}
-
-func (c *crawler) getArticle(html string) {
-
+	articleList := c.rule.articleList.FindAllStringSubmatch(html, -1)
+	for _, v := range articleList {
+		c.urlProvider.addOneURL(tag, v[1])
+	}
 }
 
 func (c *crawler) getTags(html string) {
+	tagURL := c.rule.tagURL.FindAllStringSubmatch(html, -1)
+	for _, v := range tagURL {
+		tg := &tag{url: v[1]}
+		tagName := strings.SplitAfter(v[1], "/")
+		c.tags[tagName[len(tagName)-1]] = tg
+	}
+}
+
+func (c *crawler) getArticle(html string) {
 
 }
 

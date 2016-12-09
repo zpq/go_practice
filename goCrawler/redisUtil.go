@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
@@ -40,11 +41,15 @@ func newRedisPool(password string) (*redisPool, error) {
 func (r *redisPool) getOneURL(tag string) string {
 	url, err := r.pool.Get().Do("lpop", tag)
 	if err != nil || url == nil {
+		// log.Println(err.Error())
 		return ""
 	}
 	return string(url.([]byte))
 }
 
 func (r *redisPool) addOneURL(tag, url string) {
-	r.pool.Get().Do("rpush", tag, url)
+	_, err := r.pool.Get().Do("rpush", tag, url)
+	if err != nil {
+		log.Println(err.Error())
+	}
 }
