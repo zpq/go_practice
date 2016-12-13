@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -50,7 +49,7 @@ func (t *threadPool) stop() {
 
 func job() error {
 	syn.Lock()
-	fmt.Println(count)
+	log.Println(count)
 	count++
 	syn.Unlock()
 	return nil
@@ -65,6 +64,7 @@ func main() {
 		job:     make(chan func() error),
 	}
 	tp.run()
+
 	//add job
 	for i := 0; i < 100; i++ {
 		tp.addJob(job)
