@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-var md5Maps map[string][16]byte = make(map[string][16]byte, 128)
+var md5Maps = make(map[string][16]byte, 128)
 var md5MapsMux sync.Mutex
 
 func main() {
@@ -69,7 +69,7 @@ func core(srcDir, dstDir string) {
 				}
 				links := strings.Split(link, "/")
 				for _, value := range links[len(links)-1:] {
-					dstDir +=  value + "/"
+					dstDir += value + "/"
 				}
 				//fmt.Println("dstDir = " + dstDir)
 
@@ -93,7 +93,7 @@ func core(srcDir, dstDir string) {
 				if !ok {
 					n, err := CopyFile(fs, fd)
 					if err != nil {
-						fmt.Println("copy error: "+ err.Error())
+						fmt.Println("copy error: " + err.Error())
 						return
 					} else {
 						if n != -1 {
