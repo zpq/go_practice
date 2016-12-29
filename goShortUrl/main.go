@@ -58,25 +58,29 @@ func Router(w http.ResponseWriter, r *http.Request) {
 }
 
 func MakeShortUrl(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	longUrl := r.PostFormValue("longUrl")
-	shortUrl := ShortenURL(longUrl)
-	newUrl := &urls{
-		ShortUrl: shortUrl[0],
-		LongUrl:  longUrl,
-		Active:   1,
-	}
-	affectNum, err := engine.Insert(newUrl)
+	r.Header.Set("Access-Control-Allow-Origin", "*")
 	res := Res{
 		Status:  0,
 		Message: "fail to make a short url",
 	}
-	if err != nil || affectNum == 0 {
+	r.ParseForm()
+	longUrl := r.PostFormValue("longUrl")
+	if longUrl != "" {
+		shortUrl := ShortenURL(longUrl)
+		newUrl := &urls{
+			ShortUrl: "/" + shortUrl[0],
+			LongUrl:  longUrl,
+			Active:   1,
+		}
+		affectNum, err := engine.Insert(newUrl)
 
-	} else {
-		res.Status = 1
-		res.Message = "success to make a short url"
-		res.Datas = append(res.Datas, shortUrl)
+		if err != nil || affectNum == 0 {
+
+		} else {
+			res.Status = 1
+			res.Message = "success to make a short url"
+			res.Datas = append(res.Datas, shortUrl[0])
+		}
 	}
 	body, err := json.Marshal(res)
 	if err != nil {
@@ -88,6 +92,7 @@ func MakeShortUrl(w http.ResponseWriter, r *http.Request) {
 
 func GetOriginUrl(w http.ResponseWriter, r *http.Request, uri string) {
 	// w.Header().Set("Location", "http://baidu.com")
+	r.Header.Set("Access-Control-Allow-Origin", "*")
 	res := Res{
 		Status:  0,
 		Message: "fail to get url",
