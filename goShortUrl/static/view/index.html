@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="http://cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+    <script src="http://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.js"></script>
+    <title>shorturl</title>
+    <style>
+        body {overflow:hidden;}
+        p {color:red;font-size: 18px;}
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-inverse">
+        <a class="navbar-brand" href="#">sheaned</a>
+        <!--<ul class="nav navbar-nav navbar-right">
+            <li class="active">
+                <a href="#">login</a>
+            </li>
+            <li>
+                <a href="#">register</a>
+            </li>
+        </ul>-->
+    </nav>
+    
+    <div class="container">
+
+        <form action="/fasf" method="POST" id="makeForm" class="form-horizontal" role="form">
+                <div class="form-group">
+                    <legend>input your url</legend>
+                </div>
+        
+                <div class="form-group">
+                    <div class="col-sm-12">
+                        <input type="text" name="longUrl" id="url" class="form-control" value="" required="required"  placeholder="input your url">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-12 ">
+                        <button id="submitBtn" class="btn btn-primary">Submit</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <p></p>
+                </div>
+        </form>
+        
+    </div>
+    
+    <script>
+        $(function() {
+            var shorturl = {
+                init : function() {
+                    $("#makeForm").submit(function(){
+                        return false;
+                    })
+                    $("#submitBtn").click(function() {
+                        if (shorturl.formCheck()) {
+                            shorturl.submit();
+                        } else {
+                            return false;
+                        }
+                    });
+                },
+                formCheck : function() {
+                    if ($.trim($("#url").val()) === "") {
+                        alert("url can not empty");
+                        return false;
+                    }
+                    $("#submitBtn").attr("disabled", "disabled");
+                    return true;
+                },
+                submit : function() {
+                    var url = $.trim($("#url").val());
+                    $.post("/api/url/shorten", {longUrl : url}, function(res) {
+                        shorturl.result(res);
+                    }, "json");
+                },
+                result : function(res) {
+                    $("#submitBtn").removeAttr("disabled");
+                    console.log(res.status)
+                    if (res.status) {
+                        $("p").html("success");
+                        $("#url").val(res.datas[0]);
+                    } else {
+                        $("p").html("fail");
+                    }
+                }
+            }
+            shorturl.init();
+        });
+    </script>
+
+</body>
+</html>

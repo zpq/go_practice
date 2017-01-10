@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strings"
 	"time"
@@ -15,12 +16,22 @@ import (
 const (
 	tokenSecret = "shortUrl_secret_zpq"
 	myMd5Secret = "shortUrl_md5_secret_zpq"
+	indexHtml   = "./static/view/index.html"
 )
 
 type User struct {
 	Id       int `xorm:"pk"`
 	Username string
 	Password string
+}
+
+func Index(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles(indexHtml)
+	if err != nil {
+		w.Write([]byte("something wrong!"))
+		return
+	}
+	t.Execute(w, nil)
 }
 
 func UserLogin(w http.ResponseWriter, r *http.Request) {

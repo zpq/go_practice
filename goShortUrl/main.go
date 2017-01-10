@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"io/ioutil"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 )
@@ -16,7 +18,7 @@ import (
 const (
 	dsn      = "root:123456@/shorturl?charset=utf8"
 	serv     = ":9999"
-	frontEnd = "http://t.sheaned.com"
+	frontEnd = "http://127.0.0.1:9999"
 )
 
 type urls struct {
@@ -79,20 +81,24 @@ func (this *myAppHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func Router(w http.ResponseWriter, r *http.Request) {
 	uri := r.RequestURI
 	if uri == "/" {
-		// http.Redirect(w, r, frontEnd, 302)
+		Index(w, r)
+	} else if uri == "/user/login" {
+
+	} else if uri == "/user/register" {
+
 	} else if uri == "/api/url/shorten" {
-		MakeShortUrl(w, r)
-	} else if uri == "/api/user/login" {
+		MakeShortUrlApi(w, r)
+	} else if uri == "/api/user/doLogin" {
 		UserLogin(w, r)
-	} else if uri == "/api/user/register" {
+	} else if uri == "/api/user/doRegister" {
 		UserRegister(w, r)
 	} else {
 		GetOriginUrl(w, r, uri)
 	}
 }
 
-func MakeShortUrl(w http.ResponseWriter, r *http.Request) {
-	r.Header.Set("Access-Control-Allow-Origin", "*")
+func MakeShortUrlApi(w http.ResponseWriter, r *http.Request) {
+	// r.Header.Set("Access-Control-Allow-Origin", "*")
 	res := Res{
 		Status:  0,
 		Message: "fail to make a short url",
@@ -100,31 +106,44 @@ func MakeShortUrl(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	longUrl := r.PostFormValue("longUrl")
 	if longUrl != "" {
-		shortUrl := ShortenURL(longUrl)[rand.Intn(4)]
-		newUrl := &urls{
-			ShortUrl: "/" + shortUrl,
-			LongUrl:  longUrl,
-			Active:   1,
+		longUrl = strings.Trim(longUrl, "/")
+		var prefix string
+		if !strings.HasPrefix(longUrl, "http://") && !strings.HasPrefix(longUrl, "https://") {
+			prefix = "http://"
 		}
-		token := r.Header.Get("authorization")
-		if token != "" {
-			tokens := strings.Split(token, " ")[1]
-			claims, _ := checkToken(tokens)
-			username := claims["username"].(string)
-			tUser := new(User)
-			ok, err := engine.Alias("t").Where("t.username = ?", username).Get(tUser)
-			if ok && err == nil {
-				newUrl.UserId = tUser.Id
+		if prefix != "" {
+			longUrl = prefix + longUrl
+		}
+
+		//todo test longUrl (get request)
+		if checkUrl(longUrl) {
+
+			shortUrl := ShortenURL(longUrl)[rand.Intn(4)]
+			newUrl := &urls{
+				ShortUrl: "/" + shortUrl,
+				LongUrl:  longUrl,
+				Active:   1,
 			}
-		}
+			token := r.Header.Get("authorization")
+			if token != "" {
+				tokens := strings.Split(token, " ")[1]
+				claims, _ := checkToken(tokens)
+				username := claims["username"].(string)
+				tUser := new(User)
+				ok, err := engine.Alias("t").Where("t.username = ?", username).Get(tUser)
+				if ok && err == nil {
+					newUrl.UserId = tUser.Id
+				}
+			}
 
-		affectNum, err := engine.Insert(newUrl)
-		if err != nil || affectNum == 0 {
+			affectNum, err := engine.Insert(newUrl)
+			if err != nil || affectNum == 0 {
 
-		} else {
-			res.Status = 1
-			res.Message = "success to make a short url"
-			res.Datas = append(res.Datas, shortUrl)
+			} else {
+				res.Status = 1
+				res.Message = "success to make a short url"
+				res.Datas = append(res.Datas, frontEnd+"/"+shortUrl)
+			}
 		}
 	}
 	body, err := json.Marshal(res)
@@ -135,7 +154,7 @@ func MakeShortUrl(w http.ResponseWriter, r *http.Request) {
 	w.Write(body)
 }
 
-func GetOriginUrl(w http.ResponseWriter, r *http.Request, uri string) {
+func GetOriginUrlAPi(w http.ResponseWriter, r *http.Request, uri string) {
 	// w.Header().Set("Location", "http://baidu.com")
 	r.Header.Set("Access-Control-Allow-Origin", "*")
 	res := Res{
@@ -163,6 +182,23 @@ func GetOriginUrl(w http.ResponseWriter, r *http.Request, uri string) {
 		return
 	}
 	w.Write(body)
+}
+
+func GetOriginUrl(w http.ResponseWriter, r *http.Request, uri string) {
+	urlS := &urls{}
+	ok, err := engine.Alias("t").Where("t.short_url = ?", uri).Get(urlS)
+	if err == nil && ok && urlS.Active == 1 {
+		urlS.Count++
+		_, err := engine.Id(urlS.Id).Cols("count").Update(urlS)
+		if err != nil {
+			fmt.Println(err.Error())
+			http.Redirect(w, r, frontEnd, 302)
+		} else {
+			http.Redirect(w, r, urlS.LongUrl, 302)
+		}
+	} else {
+		http.Redirect(w, r, frontEnd, 302)
+	}
 }
 
 func DeactiveUrl(w http.ResponseWriter, r *http.Request, uri string) {
@@ -199,6 +235,22 @@ func DeactiveUrl(w http.ResponseWriter, r *http.Request, uri string) {
 		return
 	}
 	w.Write(body)
+}
+
+func checkUrl(s string) bool {
+	resp, err := http.Get(s)
+	if err != nil {
+		fmt.Println(err.Error())
+		return false
+	}
+	_, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		fmt.Println(err.Error())
+		return false
+	}
+	// fmt.Println(string(html))
+	return true
 }
 
 /**
