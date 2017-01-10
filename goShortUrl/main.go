@@ -243,7 +243,7 @@ func checkUrl(s string) bool {
 		fmt.Println(err.Error())
 		return false
 	}
-	_, err := ioutil.ReadAll(resp.Body)
+	_, err = ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
 		fmt.Println(err.Error())
