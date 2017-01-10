@@ -18,7 +18,7 @@ import (
 const (
 	dsn      = "root:123456@/shorturl?charset=utf8"
 	serv     = ":9999"
-	frontEnd = "http://127.0.0.1:9999"
+	frontEnd = "http://t.sheaned.com"
 )
 
 type urls struct {
