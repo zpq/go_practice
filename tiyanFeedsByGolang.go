@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"fmt"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 )
@@ -62,6 +64,14 @@ type dtb_applyform struct {
 	Isbewill       int
 }
 
+type dtb_user_points struct {
+	Register_id      int `xorm:"pk"`
+	Available_points int
+	Used_points      int
+	Freeze_points    int
+	Update_on        string
+}
+
 type dtb_mobile struct {
 	Id     int `xorm:"pk"`
 	Mobile string
@@ -93,6 +103,8 @@ type dtb_log_visit struct {
 	Template_id    int
 }
 
+var dsn = "root:123456@/laiyuan2?charset=utf8"
+
 func addPvip(engine *xorm.Engine, id int, lv dtb_log_visit) dtb_log_visit {
 	lv.Id = id
 	lv.Visit_time = time.Now().Format("2006-01-02 15:04:05")
@@ -110,8 +122,22 @@ func addPvip(engine *xorm.Engine, id int, lv dtb_log_visit) dtb_log_visit {
 	return lv
 }
 
+func addUserPoints(engine *xorm.Engine, register_id string) {
+	reg_id, _ := strconv.Atoi(register_id)
+	up := dtb_user_points{}
+	up.Register_id = reg_id
+	up.Available_points = rand.Intn(10000)
+	up.Freeze_points = rand.Intn(10)
+	up.Used_points = rand.Intn(10)
+	up.Update_on = time.Now().Format("2006-01-02 15:04:05")
+	_, err := engine.Insert(&up)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+}
+
 func coreHandler(hash, origin_af_mobile int, recomIds, pa_names, ips []string, hds, lms, sources, way []map[string][]byte) {
-	engine, err := xorm.NewEngine("mysql", "root:123456@/laiyuan2?charset=utf8")
+	engine, err := xorm.NewEngine("mysql", dsn)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
@@ -128,7 +154,7 @@ func coreHandler(hash, origin_af_mobile int, recomIds, pa_names, ips []string, h
 		recomMobiles = append(recomMobiles, tmpRecomMobile)
 		tmpRecomMobile++
 	}
-
+	recomid := ""
 	recomIds_len, pa_names_len, ips_lenm, hds_len, lms_len, sources_len, way_len := len(recomIds)-1, len(pa_names)-1, len(ips)-1, len(hds)-1, len(lms)-1, len(sources)-1, len(way)-1
 
 	for i := 0; i < InsertLen; i++ {
@@ -179,14 +205,17 @@ func coreHandler(hash, origin_af_mobile int, recomIds, pa_names, ips []string, h
 		}
 		log_visit.Visitor_ip = applyform.Ip
 		//随机情况,插入名单表和手机表
-		if rand.Intn(2) == 1 { //是否主动
+		if rand.Intn(3) == 1 { //是否主动 33%概率为主动， 其余为非主动
 			if rand.Intn(2) == 1 { // 友介的情况
 				if rand.Intn(2) == 1 { //有source的情况
 					applyform.Source = string(sources[rand.Intn(sources_len)]["code"])
 				} else {
 					applyform.Source = ""
 				}
-				applyform.Recom_id = recomIds[rand.Intn(recomIds_len)]
+				recomid = recomIds[rand.Intn(recomIds_len)]
+				applyform.Recom_id = recomid
+				// add points
+				// addUserPoints(engine, recomid)
 				applyform.Ref_mobile = applyform.Af_mobile
 				applyform.Ref_mobile = strconv.Itoa(recomMobiles[rand.Intn(recomMobilesLen)])
 				log_visit.Recom_id = applyform.Recom_id
@@ -254,15 +283,17 @@ var InsertLen int
 var tiyanurl string = "http://m.tiyan.qiaohu.com"
 
 func main() {
-	fc := flag.Int("c", 1000, "the number of each gorouting")
+	fc := flag.Int("c", 3000, "the number of each gorouting")
 	flag.Parse()
 	InsertLen = *fc
-	engine, err := xorm.NewEngine("mysql", "root:123456@/laiyuan2?charset=utf8")
+	engine, err := xorm.NewEngine("mysql", dsn)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
 
 	pa_names := []string{"刘备", "关羽", "张飞", "赵云", "马超", "黄忠", "诸葛亮", "徐庶", "庞统", "法正", "关平", "关索", "张苞", "关兴", "马岱", "廖化", "魏延", "曹操", "荀彧", "荀攸", "郭嘉", "贾诩", "司马懿", "曹丕", "曹植", "曹冲", "夏侯惇", "夏侯渊", "许褚", "典韦", "徐晃", "张辽", "吕布", "庞德", "于禁", "乐进", "李典", "司马昭", "夏侯霸", "姜维", "钟会", "邓艾", "张颌", "颜良", "文丑", "华雄", "孙坚", "孙策", "孙权", "诸葛恪", "陆逊", "周瑜", "鲁肃", "诸葛瑾", "张昭", "吕蒙", "太史慈", "潘璋", "黄盖", "蒋干", "张三", "李四", "对的", "速度", "方法", "功夫", "王武", "王了", "王八", "忘旧", "两块"}
+
+	// hds, _ := engine.Query("select * from dtb_lianmeng where lhtype = 1 and enableflag = 1")
 
 	hds, _ := engine.Query("select * from dtb_lianmeng where lhtype = 1 and enableflag = 1")
 
