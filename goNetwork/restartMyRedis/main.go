@@ -1,11 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
 	"time"
-	"os"
-	"fmt"
 )
 
 const (
@@ -16,7 +16,7 @@ const (
 func checkArticle(url string) bool {
 	resp, err := http.Get(url)
 	if err != nil {
-		fmt.Fprintln(os.Stdout, time.Now().String() + " " + err.Error())
+		fmt.Fprintln(os.Stdout, time.Now().String()+" "+err.Error())
 		return false
 	}
 	if resp.StatusCode == 500 {
@@ -28,7 +28,7 @@ func checkArticle(url string) bool {
 func restartRedis() {
 	cmd := exec.Command("supervisorctl", "restart", "redis")
 	if err := cmd.Run(); err != nil {
-		fmt.Fprintln(os.Stdout, time.Now().String() + " " +err.Error())
+		fmt.Fprintln(os.Stdout, time.Now().String()+" "+err.Error())
 	}
 }
 
@@ -39,11 +39,10 @@ func main() {
 		case <-t.C:
 			if !checkArticle(articleURL) {
 				restartRedis()
-				fmt.Fprintln(os.Stdout, time.Now().String() + " broken down!\n")
+				fmt.Fprintln(os.Stdout, time.Now().String()+" broken down!\n")
 			} else {
-				fmt.Fprintln(os.Stdout, time.Now().String() + " redis test ok!\n")
+				fmt.Fprintln(os.Stdout, time.Now().String()+" redis test ok!\n")
 			}
-		default:
 		}
 	}
 }
