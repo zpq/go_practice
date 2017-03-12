@@ -76,14 +76,14 @@ func (wc *WebSocketConn) ReadData() (data []byte, messageType int, err error) {
 	var b []byte // each data
 
 	for {
-		b = make([]byte, 4096)
+		b = make([]byte, 10)
 		// read first two bytes of the frame
 		if _, err := wc.conn.Read(b[:2]); err != nil {
 			return nil, 0, err
 		}
 
 		final := b[0]&finalBit != 0 // whether a final frame
-		log.Println("isfinal: ", final)
+		// log.Println("isfinal: ", final)
 		dataType := int(b[0] & 0xf) // frame type
 		switch dataType {
 		case textMessage:
@@ -91,16 +91,16 @@ func (wc *WebSocketConn) ReadData() (data []byte, messageType int, err error) {
 		case binaryMessage:
 			messageType = binaryMessage
 		}
-		log.Println("messageType: ", messageType)
+		// log.Println("messageType: ", messageType)
 		index = index + 1
 
 		payloadLen := b[1] & 0x7f // count data length
-		// dataLen := int64(payloadLen)
+		dataLen := int64(payloadLen)
 		if payloadLen == 126 {
-			// dataLen = int64(binary.BigEndian.Uint16(b[:2]))
+			dataLen = int64(binary.BigEndian.Uint16(b[:2]))
 			index = index + 2
 		} else if payloadLen == 127 {
-			// dataLen = int64(binary.BigEndian.Uint64(b[:8]))
+			dataLen = int64(binary.BigEndian.Uint64(b[:8]))
 			if _, err := wc.conn.Read(b[:8]); err != nil {
 				return nil, 0, err
 			}
@@ -115,11 +115,21 @@ func (wc *WebSocketConn) ReadData() (data []byte, messageType int, err error) {
 			index = index + 4
 		}
 
-		if len(wc.maskKey) > 0 {
-			maskByte(wc.maskKey, b, index)
+		// if len(wc.maskKey) > 0 {
+		// 	maskByte(wc.maskKey, b, index)
+		// }
+
+		data = make([]byte, dataLen)
+		_, err = wc.conn.Read(data)
+		if err != nil {
+			return nil, 0, err
 		}
 
-		data = b[index:]
+		if len(wc.maskKey) > 0 {
+			maskByte(wc.maskKey, data, 0)
+		}
+
+		// data = b[index:]
 		if final {
 			switch dataType {
 			case 8: //close frame
@@ -136,7 +146,7 @@ func (wc *WebSocketConn) ReadData() (data []byte, messageType int, err error) {
 		} else {
 			tmpData = append(tmpData, data...)
 
-			log.Println("data: ", string(tmpData))
+			// log.Println("data: ", string(tmpData))
 		}
 	}
 }

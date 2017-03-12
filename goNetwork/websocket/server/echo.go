@@ -24,9 +24,9 @@ func echo(w http.ResponseWriter, r *http.Request) {
 			log.Println("read:", err)
 			break
 		}
-		//log.Printf("recv: %s, mesageType: %d", message, messageType)
+		log.Printf("recv: %s, mesageType: %d", message, messageType)
 		c.SendData(message, messageType)
-		log.Println("send once")
+		// log.Println("send once")
 	}
 }
 
