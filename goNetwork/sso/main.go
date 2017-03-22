@@ -183,8 +183,8 @@ func makeJwtSign(data ...string) string {
 		data[0],
 		data[1],
 		jwt.StandardClaims{
-			ExpiresAt: int64(time.Second * 10),
-			Issuer:    "sso",
+			// ExpiresAt: time.Now().Add(time.Second * 5).Unix(),
+			Issuer: "sso",
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -210,6 +210,13 @@ func validate(w http.ResponseWriter, r *http.Request) {
 
 	if claims, ok := token.Claims.(*myClaimJwt); ok && token.Valid {
 		// fmt.Printf("%v %v %v\n", claims.SessionID, claims.Username, claims.StandardClaims.ExpiresAt)
+		// log.Printf("%T, %d", claims.IssuedAt, claims.IssuedAt)
+		// if claims.ExpiresAt < time.Now().Unix() { // expired
+		// 	log.Println("jwt has expired")
+		// 	http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		// 	return
+		// }
+
 		if ok, _ := checkAuth(claims.SessionID); ok {
 			w.WriteHeader(200)
 			fmt.Fprintln(w, "success")
