@@ -11,6 +11,8 @@ import (
 
 	"time"
 
+	"runtime"
+
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -216,7 +218,7 @@ func makeJwtSign(data ...string) string {
 }
 
 func validate(w http.ResponseWriter, r *http.Request) {
-	// log.Println("subsystem call validate ", r.Referer())
+	log.Println("subsystem call validate ", r.Host)
 	j := r.FormValue("jwt")
 	token, err := jwt.ParseWithClaims(j, &myClaimJwt{}, func(token *jwt.Token) (interface{}, error) {
 		return mySignedKey, nil
@@ -252,6 +254,7 @@ func validate(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	runtime.GOMAXPROCS(4)
 	var err error
 	rp, err = newRedisPool("")
 	if err != nil {

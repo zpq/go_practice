@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"runtime"
 )
 
 const (
@@ -74,6 +75,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	runtime.GOMAXPROCS(4)
 	http.HandleFunc("/protect", protect)
 	http.HandleFunc("/attach", attach)
 	http.HandleFunc("/index", index)
