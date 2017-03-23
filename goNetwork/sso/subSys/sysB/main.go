@@ -5,6 +5,12 @@ import (
 	"net/http"
 )
 
+const (
+	server    = "http://my.sso.com"
+	selfAddr  = "http://systemB.com/"
+	ssoLogout = server + "/logout"
+)
+
 /**
 * protected resource
  */
@@ -12,15 +18,20 @@ func protect(w http.ResponseWriter, r *http.Request) {
 	//check auth can move to middleware layer(filter)
 	c, err := r.Cookie("jwtSSO")
 	if err != nil { // not login
-		http.Redirect(w, r, "http://127.0.0.1:20000/login?redirectUrl=http://127.0.0.1:20002/protect&remote=http://127.0.0.1:20002/", 302)
+		http.Redirect(w, r, server+"/login?redirectUrl="+selfAddr+"/protect&remote="+selfAddr, 302)
 		return
 	}
 	if res := verify(c.Value); res { // check ok
-		w.Write([]byte("ok! hello! You are authed in 20002"))
+		w.Write([]byte("ok! hello! You are authed in 20001"))
 	} else {
-		http.Redirect(w, r, "http://127.0.0.1:20000/login?redirectUrl=http://127.0.0.1:20002/protect&remote=http://127.0.0.1:20002/", 302)
+		http.Redirect(w, r, server+"/login?redirectUrl="+selfAddr+"/protect&remote="+selfAddr, 302)
 		return
 	}
+}
+
+func logout(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, ssoLogout+"?redirectUrl="+selfAddr, 302)
+	return
 }
 
 /**
@@ -34,7 +45,7 @@ func attach(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &cookie)
 		http.Redirect(w, r, redirectURL, 302)
 	} else {
-		http.Redirect(w, r, "http://127.0.0.1:20000/login?redirectUrl=http://127.0.0.1:20002/protect&remote=http://127.0.0.1:20002/", 302)
+		http.Redirect(w, r, server+"/login?redirectUrl="+selfAddr+"/protect&remote="+selfAddr, 302)
 		return
 	}
 }
@@ -43,12 +54,12 @@ func attach(w http.ResponseWriter, r *http.Request) {
 * verify the jwt token by request sso
  */
 func verify(payload string) bool {
-	res, err := http.Get("http://127.0.0.1:20000/validate?jwt=" + payload + "&redirectUrl=http://127.0.0.1:20002/protect&remote=http://127.0.0.1:20002/")
+	res, err := http.Get(server + "/validate?jwt=" + payload + "&redirectUrl=" + selfAddr + "/protect&remote=" + selfAddr)
 	if err != nil {
 		log.Println("validate http error: ", err.Error())
 		return false
 	}
-	// log.Println("status = ", res.Status)
+	// here can parse userinfo from the sso message
 	if res.StatusCode == 200 {
 		return true
 	}
@@ -58,6 +69,7 @@ func verify(payload string) bool {
 func main() {
 	http.HandleFunc("/protect", protect)
 	http.HandleFunc("/attach", attach)
+	http.HandleFunc("/logout", logout)
 	if err := http.ListenAndServe(":20002", nil); err != nil {
 		log.Fatal(err.Error())
 	}

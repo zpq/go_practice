@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	redisIP   = "192.168.2.111"
+	redisIP   = "192.168.2.118"
 	redisPORT = "6379"
 )
 

@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	USERNAME = "admin"
-	PASSWORD = "admin"
+	USERNAME     = "admin"
+	PASSWORD     = "admin"
+	serverDomain = ".my.sso.com"
 )
 
 var (
@@ -125,9 +126,9 @@ func doLogin(w http.ResponseWriter, r *http.Request) {
 			Name:     "sid",
 			Value:    v,
 			HttpOnly: true,
-			Domain:   "http://127.0.0.1:20000/",
-			Path:     "/",
-			Expires:  time.Now().Add(time.Second * 7200),
+			Domain:   serverDomain,
+			// Path:     "/",
+			Expires: time.Now().Add(time.Second * 7200),
 			// MaxAge:   int(time.Second * 7200),
 		}
 		http.SetCookie(w, &cookie)
@@ -145,6 +146,24 @@ func doLogin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
+}
+
+func logout(w http.ResponseWriter, r *http.Request) {
+	c, err := r.Cookie("sid")
+	redirectURL := r.FormValue("redirectUrl")
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	_, err = rp.pool.Get().Do("DEL", c.Value)
+	if err != nil {
+		log.Println("redis hash del error: ", err.Error())
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	log.Printf("user from %s logout\n", redirectURL)
+	http.Redirect(w, r, redirectURL, 302)
+	return
 }
 
 func myMd5(data string) string {
@@ -197,7 +216,7 @@ func makeJwtSign(data ...string) string {
 }
 
 func validate(w http.ResponseWriter, r *http.Request) {
-	log.Println("subsystem call validate ", r.Referer())
+	// log.Println("subsystem call validate ", r.Referer())
 	j := r.FormValue("jwt")
 	token, err := jwt.ParseWithClaims(j, &myClaimJwt{}, func(token *jwt.Token) (interface{}, error) {
 		return mySignedKey, nil
@@ -242,6 +261,7 @@ func main() {
 	http.HandleFunc("/validate", validate)
 	http.HandleFunc("/login", login)
 	http.HandleFunc("/doLogin", doLogin)
+	http.HandleFunc("/logout", logout)
 	if err := http.ListenAndServe(":20000", nil); err != nil {
 		log.Fatal(err.Error())
 	}
