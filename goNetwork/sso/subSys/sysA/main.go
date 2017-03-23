@@ -9,6 +9,7 @@ const (
 	server    = "http://my.sso.com"
 	selfAddr  = "http://systemA.com/"
 	ssoLogout = server + "/logout"
+	port      = ":20001"
 )
 
 /**
@@ -22,7 +23,7 @@ func protect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if res := verify(c.Value); res { // check ok
-		w.Write([]byte("ok! hello! You are authed in 20001"))
+		w.Write([]byte("ok! hello! You are authed in " + selfAddr))
 	} else {
 		http.Redirect(w, r, server+"/login?redirectUrl="+selfAddr+"/protect&remote="+selfAddr, 302)
 		return
@@ -30,7 +31,7 @@ func protect(w http.ResponseWriter, r *http.Request) {
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, ssoLogout+"?redirectUrl="+selfAddr, 302)
+	http.Redirect(w, r, ssoLogout+"?redirectUrl="+selfAddr+"index", 302)
 	return
 }
 
@@ -66,11 +67,17 @@ func verify(payload string) bool {
 	return false
 }
 
+//not login
+func index(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("you are not login yet"))
+}
+
 func main() {
 	http.HandleFunc("/protect", protect)
 	http.HandleFunc("/attach", attach)
+	http.HandleFunc("/index", index)
 	http.HandleFunc("/logout", logout)
-	if err := http.ListenAndServe(":20001", nil); err != nil {
+	if err := http.ListenAndServe(port, nil); err != nil {
 		log.Fatal(err.Error())
 	}
 }
