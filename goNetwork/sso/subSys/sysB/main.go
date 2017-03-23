@@ -60,6 +60,7 @@ func verify(payload string) bool {
 		log.Println("validate http error: ", err.Error())
 		return false
 	}
+	defer res.Body.Close()
 	// here can parse userinfo from the sso message
 	if res.StatusCode == 200 {
 		return true
