@@ -11,6 +11,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -19,21 +21,41 @@ import (
 var md5Maps = make(map[string][16]byte, 128)
 var md5MapsMux sync.Mutex
 
+var delimiter = "/"
+
 func main() {
 	flag.Parse()
 	for _, v := range flag.Args() {
 		fmt.Println(v)
 	}
-	if flag.NArg() != 2 {
+	if flag.NArg() < 2 {
 		fmt.Println("args error")
 		return
 	}
-	srcDir, dstDir := flag.Arg(0), flag.Arg(1)
-	// srcDir, dstDir := "F:\\gotest\\src", "F:\\gotest\\dst"
+	srcDir, dstDir, val := flag.Arg(0), flag.Arg(1), flag.Arg(2)
+	if runtime.GOOS == "windows" {
+		delimiter = "\\\\"
+	}
+
+	interval := 10
+	if val == "" {
+		interval = 10
+	} else {
+		interval, err := strconv.Atoi(val)
+		if err != nil {
+			interval = 10
+		} else {
+			if interval < 10 {
+				interval = 10
+			}
+		}
+	}
+
+	// srcDir, dstDir := "F:\\gotest\\src\\", "F:\\gotest\\dst\\"
 	for {
 		go core(srcDir, dstDir)
 		fmt.Println("I am watching...")
-		time.Sleep(time.Second * 30)
+		time.Sleep(time.Second * time.Duration(interval))
 	}
 }
 
@@ -45,8 +67,8 @@ func core(srcDir, dstDir string) {
 	}
 	for _, v := range dirs {
 		if v.IsDir() {
-			subSrcDir := srcDir + v.Name() + "/"
-			subDstDir := dstDir + v.Name() + "/"
+			subSrcDir := srcDir + v.Name() + delimiter
+			subDstDir := dstDir + v.Name() + delimiter
 			if !fileExists(subDstDir) {
 				if err := os.Mkdir(dstDir+v.Name(), 0777); err != nil {
 					fmt.Println("mkdir error:", err.Error())
@@ -67,9 +89,9 @@ func core(srcDir, dstDir string) {
 					fmt.Println(err.Error())
 					return
 				}
-				links := strings.Split(link, "/")
+				links := strings.Split(link, delimiter)
 				for _, value := range links[len(links)-1:] {
-					dstDir += value + "/"
+					dstDir += value + delimiter
 				}
 				//fmt.Println("dstDir = " + dstDir)
 
@@ -79,7 +101,7 @@ func core(srcDir, dstDir string) {
 						return
 					}
 				}
-				link += "/"
+				link += delimiter
 				//fmt.Println("srcDir=" + link)
 				go core(link, dstDir)
 			} else {
@@ -95,10 +117,9 @@ func core(srcDir, dstDir string) {
 					if err != nil {
 						fmt.Println("copy error: " + err.Error())
 						return
-					} else {
-						if n != -1 {
-							fmt.Printf("%s copy ==> to %s, total byte %d\n", fs, fd, n)
-						}
+					}
+					if n != -1 {
+						fmt.Printf("%s copy ==> to %s, total byte %d\n", fs, fd, n)
 					}
 				}
 			}
