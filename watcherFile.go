@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-var md5Maps = make(map[string][16]byte, 128)
+var md5Maps = make(map[string][16]byte)
 var md5MapsMux sync.Mutex
 
 var delimiter = "/"
