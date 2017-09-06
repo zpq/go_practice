@@ -4,19 +4,19 @@ type Deck struct {
 	ID            string
 	Name          string
 	MaxCardNumber int
-	Card          []*Card
+	Cards         []*Card
 }
 
-func (d *Deck) AddCard(c ...*Card) {
-	for _, v := range c {
-		if !d.ContainCard(v) {
-			d.Card = append(d.Card, v)
-		}
+func (d *Deck) AddCard(c *Card) {
+	// for _, v := range c {
+	if !d.ContainCard(c) {
+		d.Cards = append(d.Cards, c)
 	}
+	// }
 }
 
 func (d *Deck) ContainCard(c *Card) bool {
-	for _, v := range d.Card {
+	for _, v := range d.Cards {
 		if v == c {
 			return true
 		}
@@ -24,8 +24,12 @@ func (d *Deck) ContainCard(c *Card) bool {
 	return false
 }
 
+func (d *Deck) RemoveCard(c *Card) {
+
+}
+
 func (d *Deck) IsEmpty() bool {
-	if len(d.Card) == 0 {
+	if len(d.Cards) == 0 {
 		return true
 	}
 	return false

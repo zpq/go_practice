@@ -2,31 +2,38 @@ package main
 
 type GameBattlerBase struct {
 	*Creature
-	CHP     int
-	CAttack int
+	CHP           int
+	CAttack       int
+	IsInBoard     bool
+	IsInGraveYard bool
 }
 
 // IsDead ...check is dead
 func (g *GameBattlerBase) IsDead() bool {
-	return g.GetFields().Hp == 0
+	return g.CHP == 0
 }
 
-// SetUpSkills ... 根据等级从数据中心加载技能
-func (g *GameBattlerBase) SetUpSkills() {
+// // SetUpSkills ... 根据等级从数据中心加载技能
+// func (g *GameBattlerBase) SetUpSkills() {
 
+// }
+
+func (g *GameBattlerBase) CopyCard(c *Card) {
+	t := *c.Creature
+	g.Creature = &t
 }
 
 func (g *GameBattlerBase) AddBuff(b *Buff) bool {
-	for k, v := range g.Buff {
+	for k, v := range g.Buffs {
 		if v == b {
 			if b.IsCanPly {
-				g.Buff[k].ply++
+				g.Buffs[k].ply++
 				return true
 			}
 			return false
 		}
 	}
-	g.Buff = append(g.Buff, b)
+	g.Buffs = append(g.Buffs, b)
 	return true
 }
 
@@ -45,4 +52,8 @@ func (g *GameBattlerBase) CheckBuffIsCollision(a *Buff, b *Buff) bool {
 func (g *GameBattlerBase) CanMove() bool {
 	// g.ContainsBuff()  // 检查角色是否包含限制行动的debuff(从数据中心那数据)
 	return false
+}
+
+func (g *GameBattlerBase) MinusTurnCoolDown() {
+	g.initTurnCooldown--
 }

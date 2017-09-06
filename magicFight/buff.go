@@ -8,6 +8,6 @@ type Buff struct {
 	ply      int
 }
 
-func (b *Buff) cast() {
+func (b *Buff) Cast() {
 	//运行js脚本
 }
