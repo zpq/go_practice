@@ -72,6 +72,7 @@ func (b *BattleControl) ProcessGroupTurn() {
 	b.CurrentGroup.SummonCard()
 	b.ChangeCurrentActor(b.CurrentGroup.Hero) // 每回合开始总是英雄第一个行动
 	for _, v := range b.CurrentGroup.DeckInBoard {
+		fmt.Println(v.Name)
 		b.ProcessActorTurn(v)
 		b.ChangeCurrentActor(v)
 	}
@@ -80,8 +81,6 @@ func (b *BattleControl) ProcessGroupTurn() {
 
 // ProcessActorTurn ...具体的某一个行动者处理
 func (b *BattleControl) ProcessActorTurn(g *GameBattler) {
-	fmt.Println("actor turn")
-	fmt.Println(b.CurrentActor.Skills[0].Name)
 	g.ApplyBuff(g)
 	//伤害结果检查
 	g.UseSkill(g)

@@ -1,9 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
 // Group ...群组对象
 type Group struct {
 	Hero            *GameBattler
@@ -63,7 +59,6 @@ func (g *Group) SetDecks(d *Deck) bool {
 func (g *Group) SummonCard() {
 	tmpHand := []*GameBattler{}
 	tmpBoard := []*GameBattler{}
-	fmt.Println(g.Deck)
 	for _, v := range g.Deck {
 		if v.initTurnCooldown == 0 {
 			v.IsInBoard = true

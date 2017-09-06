@@ -35,7 +35,7 @@ func main() {
 	bc := &BattleControl{Battle: b}
 	bc.MakeOrder()
 	bc.ProsessTurn()
-
+	// fmt.Println(bc.CurrentGroup.DeckInBoard)
 	// for _, v := range skillSource {
 	// 	fmt.Println(v)
 	// }
