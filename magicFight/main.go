@@ -20,8 +20,9 @@ var (
 )
 
 func main() {
-	LoadCardSource("./data/card.txt")
+
 	LoadSkillSource("./data/skill.txt")
+	LoadCardSource("./data/card.txt")
 
 	u1 := &User{ID: 1, Name: "peter"}
 	u2 := &User{ID: 2, Name: "mary"}
@@ -32,13 +33,11 @@ func main() {
 
 	b := &Battle{ID: "battle1"}
 	b.SetUpPVP(u1, u2)
+
 	bc := &BattleControl{Battle: b}
 	bc.MakeOrder()
 	bc.ProsessTurn()
-	// fmt.Println(bc.CurrentGroup.DeckInBoard)
-	// for _, v := range skillSource {
-	// 	fmt.Println(v)
-	// }
+
 }
 
 func LoadCardSource(filename string) {
@@ -63,10 +62,10 @@ func LoadCardSource(filename string) {
 			c.initTurnCooldown = stringToInt(v[9])
 			skills := strings.Split(v[10], ",")
 			for _, sv := range skills {
-				if sv != "0" {
-					skill := skillSource["skill"+sv]
-					c.Skills = append(c.Skills, &skill)
-				}
+				// if sv != "0" {
+				skill := skillSource["skill"+sv]
+				c.Skills = append(c.Skills, &skill)
+				// }
 			}
 			cardSource[c.ID] = c
 		}

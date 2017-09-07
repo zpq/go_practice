@@ -1,0 +1,19 @@
+// message format
+
+card0 of user0 use skill0 make 100 damage to card1 of user1 play video 10
+
+card0 of user0 affect by buff0 make 50 damage
+card0 of user0 affect by buff0 increase 50 attack
+card0 of user0 affect by buff0 reduce 50 attack
+
+//-------------------------------------------------------//
+
+user0 summon card0
+user0 summon card1
+user0 summon card2
+
+card0 of user0 use skill0 add N(+-) CHP to card0 of user1  [attach buff0 to card0 of user0, buff1 to card1 of user0, buff2 to card20 of user1]
+
+card0 of user0 influenced buff0 add CHP N(+-) 
+
+card0 of user0 influenced buff1 add 

@@ -2,6 +2,7 @@ package main
 
 import "math/rand"
 import "fmt"
+import "strconv"
 
 type BattleControl struct {
 	*Battle
@@ -56,13 +57,16 @@ func (b *BattleControl) ProsessTurn() {
 		if b.CheckBattleEnd() {
 			break
 		}
+		b.ShowStatus()
 		b.ProcessGroupTurn()
-
-		fmt.Printf("Turn %d end!\n", b.CurrentTurn)
+		b.CurrentGroup.MinusTurnCoolDown()
 		b.ChangeCurrentGroup()
+		b.ProcessGroupTurn()
+		b.CurrentGroup.MinusTurnCoolDown()
+		b.ChangeCurrentGroup()
+		fmt.Printf("Turn %d end!\n", b.CurrentTurn)
 		b.IsTurnEnd = true
 		b.TurnAdd()
-		b.CurrentGroup.MinusTurnCoolDown()
 	}
 	fmt.Println("battle end!")
 }
@@ -70,9 +74,15 @@ func (b *BattleControl) ProsessTurn() {
 // ProcessGroupTurn ...群组处理
 func (b *BattleControl) ProcessGroupTurn() {
 	b.CurrentGroup.SummonCard()
-	b.ChangeCurrentActor(b.CurrentGroup.Hero) // 每回合开始总是英雄第一个行动
+	b.ShowStatus()
+	b.ChangeCurrentActor(b.CurrentGroup.Hero)
+
+	// hero actor
+	b.ProcessActorTurn(b.CurrentGroup.Hero)
+	b.ShowStatus()
+
+	// card actor
 	for _, v := range b.CurrentGroup.DeckInBoard {
-		fmt.Println(v.Name)
 		b.ProcessActorTurn(v)
 		b.ChangeCurrentActor(v)
 	}
@@ -81,18 +91,51 @@ func (b *BattleControl) ProcessGroupTurn() {
 
 // ProcessActorTurn ...具体的某一个行动者处理
 func (b *BattleControl) ProcessActorTurn(g *GameBattler) {
-	g.ApplyBuff(g)
-	//伤害结果检查
-	g.UseSkill(g)
-	//伤害结果检查
-	g.CommonAttack(g)
-	//伤害结果检查
+	g.ApplyBuff(g, b)
+	// b.DamageCheck()
+	g.UseSkill(g, b)
+	b.DamageCheck()
+	g.CommonAttack(g, b)
+	b.DamageCheck()
 	b.IsActorEnd = true
 }
 
 func (b *BattleControl) DamageCheck() {
 	b.CurrentGroup.CheckDeadCardsAndRemoveThem()
 	b.TargetGroup.CheckDeadCardsAndRemoveThem()
+	b.ShowStatus()
+}
+
+func (b *BattleControl) ShowStatus() {
+	fmt.Println("\n--------------------show status start-------------------\n")
+	fmt.Print("User" + strconv.Itoa(b.CurrentGroup.UserID) + " ")
+	fmt.Print(b.CurrentGroup.Hero.Name + "(")
+	fmt.Print(b.CurrentGroup.Hero.CAttack)
+	fmt.Print(",")
+	fmt.Print(b.CurrentGroup.Hero.CHP)
+	fmt.Print(") ")
+	for _, v := range b.CurrentGroup.DeckInBoard {
+		fmt.Print(v.Name + "(")
+		fmt.Print(v.CAttack)
+		fmt.Print(",")
+		fmt.Print(v.CHP)
+		fmt.Print(") ")
+	}
+	// ------------------------------------------------ //
+	fmt.Print("\nUser" + strconv.Itoa(b.TargetGroup.UserID) + " ")
+	fmt.Print(b.TargetGroup.Hero.Name + "(")
+	fmt.Print(b.TargetGroup.Hero.CAttack)
+	fmt.Print(",")
+	fmt.Print(b.TargetGroup.Hero.CHP)
+	fmt.Print(") ")
+	for _, v := range b.TargetGroup.DeckInBoard {
+		fmt.Print(v.Name + "(")
+		fmt.Print(v.CAttack)
+		fmt.Print(",")
+		fmt.Print(v.CHP)
+		fmt.Print(") ")
+	}
+	fmt.Println("\n\n--------------------show status end-------------------\n")
 }
 
 func (b *BattleControl) CheckBattleEnd() bool {

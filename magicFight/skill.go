@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/robertkrimen/otto"
-)
+import "github.com/robertkrimen/otto"
 
 type Skill struct {
 	ID          string
@@ -11,20 +9,33 @@ type Skill struct {
 	Description string
 }
 
-func (s *Skill) Use(b *Battle) error {
-	jsCode, err := loadJs(s.ScriptID)
+func (s *Skill) Use(ca *GameBattler, b *BattleControl) (error, string) {
+	jsCode, err := loadJs(scriptSkillPrefix + s.ScriptID + ".js")
 	if err != nil {
-		return err
+		return err, ""
 	}
 	vm := otto.New()
-	jsBattle, err := vm.ToValue(b)
+	jsBattleControl, err := vm.ToValue(b)
 	if err != nil {
-		return err
+		return err, ""
 	}
-	vm.Set("battle", jsBattle)
+	jsCa, err := vm.ToValue(ca)
+	if err != nil {
+		return err, ""
+	}
+	vm.Set("bc", jsBattleControl)
+	vm.Set("ca", jsCa)
 	_, err = vm.Run(jsCode)
 	if err != nil {
-		return err
+		return err, ""
 	}
-	return nil
+	result, err := vm.Get("result")
+	if err != nil {
+		return err, ""
+	}
+	r, err := result.Export()
+	if err != nil || r == nil {
+		return err, ""
+	}
+	return nil, r.(string)
 }

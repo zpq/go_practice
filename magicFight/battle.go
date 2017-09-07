@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	maxTurn = 20
+	maxTurn = 3
 )
 
 type Battle struct {
@@ -24,7 +24,7 @@ type Battle struct {
 
 func (b *Battle) SetUpPVP(u1, u2 *User) {
 	b.Users = []*User{u1, u2}
-	b.Groups = append(b.Groups, &Group{}, &Group{})
+	b.Groups = append(b.Groups, &Group{UserID: u1.ID}, &Group{UserID: u2.ID})
 	b.Groups[0].SetDecks(b.Users[0].DefaultDeck)
 	b.Groups[0].SetHero(b.Users[0].DefaultHero)
 	b.Groups[1] = &Group{}
@@ -33,6 +33,8 @@ func (b *Battle) SetUpPVP(u1, u2 *User) {
 	b.MaxTurn = maxTurn
 	b.IsSetUpEnd = true
 	b.IsBattleGegin = true
+
+	fmt.Printf("Battle setup ends!\n")
 	fmt.Printf("Battle id %s begin!\n", b.ID)
 }
 

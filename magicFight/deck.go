@@ -8,11 +8,9 @@ type Deck struct {
 }
 
 func (d *Deck) AddCard(c *Card) {
-	// for _, v := range c {
 	if !d.ContainCard(c) {
 		d.Cards = append(d.Cards, c)
 	}
-	// }
 }
 
 func (d *Deck) ContainCard(c *Card) bool {

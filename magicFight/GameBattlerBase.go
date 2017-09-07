@@ -6,22 +6,41 @@ type GameBattlerBase struct {
 	CAttack       int
 	IsInBoard     bool
 	IsInGraveYard bool
+	Position      int
+}
+
+func NewGameBattlerBase() *GameBattlerBase {
+	return &GameBattlerBase{
+		Creature: &Creature{},
+	}
+}
+
+func (g *GameBattler) CopyCard(c *Card) {
+	g.ID = c.ID
+	g.Name = c.Name
+	g.ActorType = c.ActorType
+	g.Faction = c.Faction
+	g.Star = c.Star
+	g.Hp = c.Hp
+	g.Attack = c.Attack
+	g.Rarity = c.Rarity
+	g.initTurnCooldown = c.initTurnCooldown
+	g.CHP = g.Hp
+	g.CAttack = g.Attack
+	// g.Buffs = c.Buffs
+	g.Skills = c.Skills
+	g.Equips = c.Equips
 }
 
 // IsDead ...check is dead
 func (g *GameBattlerBase) IsDead() bool {
-	return g.CHP == 0
+	return g.CHP <= 0
 }
 
 // // SetUpSkills ... 根据等级从数据中心加载技能
 // func (g *GameBattlerBase) SetUpSkills() {
 
 // }
-
-func (g *GameBattlerBase) CopyCard(c *Card) {
-	t := *c.Creature
-	g.Creature = &t
-}
 
 func (g *GameBattlerBase) AddBuff(b *Buff) bool {
 	for k, v := range g.Buffs {

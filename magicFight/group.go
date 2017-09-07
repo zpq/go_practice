@@ -1,7 +1,12 @@
 package main
 
+import (
+	"fmt"
+)
+
 // Group ...群组对象
 type Group struct {
+	UserID          int
 	Hero            *GameBattler
 	Deck            []*GameBattler
 	DeckInBoard     []*GameBattler
@@ -29,7 +34,7 @@ func (g *Group) Clear() {
 // SetHero ...初始化群组中的英雄卡牌
 func (g *Group) SetHero(c *Card) bool {
 	if c.ActorType == 1 {
-		gb := &GameBattler{GameBattlerBase: new(GameBattlerBase), GameAction: new(GameAction)}
+		gb := &GameBattler{GameBattlerBase: NewGameBattlerBase(), GameAction: new(GameAction)}
 		gb.CopyCard(c)
 		g.Hero = gb
 		return true
@@ -42,7 +47,7 @@ func (g *Group) SetDecks(d *Deck) bool {
 	for _, v := range d.Cards {
 		if v.ActorType == 2 {
 			gb := &GameBattler{
-				GameBattlerBase: &GameBattlerBase{},
+				GameBattlerBase: NewGameBattlerBase(),
 				GameAction:      &GameAction{},
 			}
 			gb.CopyCard(v)
@@ -58,10 +63,11 @@ func (g *Group) SetDecks(d *Deck) bool {
 // SummonCard ...打出手牌中冷却时间已经结束的卡牌
 func (g *Group) SummonCard() {
 	tmpHand := []*GameBattler{}
-	tmpBoard := []*GameBattler{}
+	tmpBoard := g.DeckInBoard
 	for _, v := range g.Deck {
 		if v.initTurnCooldown == 0 {
 			v.IsInBoard = true
+			v.Position = len(tmpBoard)
 			tmpBoard = append(tmpBoard, v)
 		} else {
 			tmpHand = append(tmpHand, v)
@@ -78,9 +84,17 @@ func (g *Group) RemoveCard(c *GameBattler) {
 		if v == c {
 			c.IsInGraveYard = true
 			g.DeckInGraveYard = append(g.DeckInGraveYard, c)
-			g.DeckInBoard = append(g.DeckInBoard[:k], g.DeckInBoard[k+1:]...)
+			if k == len(g.DeckInBoard)-1 {
+				g.DeckInBoard = g.DeckInBoard[:k-2]
+			} else {
+				g.DeckInBoard = append(g.DeckInBoard[:k], g.DeckInBoard[k+1:]...)
+			}
 			break
 		}
+	}
+
+	for k, v := range g.DeckInBoard {
+		v.Position = k
 	}
 }
 
@@ -90,6 +104,9 @@ func (g *Group) CheckDeadCardsAndRemoveThem() {
 	for _, v := range g.DeckInBoard {
 		if v.IsDead() {
 			tmpCards = append(tmpCards, v)
+			fmt.Print("\nUser")
+			fmt.Print(g.UserID)
+			fmt.Print(" " + v.Name + " dead\n")
 		}
 	}
 	if len(tmpCards) > 0 {
