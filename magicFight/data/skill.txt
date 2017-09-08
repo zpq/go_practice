@@ -4,3 +4,4 @@ skill1,雷电术,thunder,对一名正面敌人造成雷电伤害
 skill2,狂雷术,rageThunder,对地方随机3名敌人(非英雄)造成雷电伤害
 skill3,凶猛撕咬,strongBite,对一名正面敌人进行一次咬击
 skill4,重炮,cannon,对一名正面敌人进行一次重炮攻击
+skill5,恢复,heal,对自己回复300HP并随机恢复3名友方单位200HP

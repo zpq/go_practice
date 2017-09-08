@@ -17,9 +17,12 @@ const (
 var (
 	cardSource  = make(map[string]Card)
 	skillSource = make(map[string]Skill)
+	SendChan    chan string
 )
 
 func main() {
+
+	SendChan = make(chan string, 20)
 
 	LoadSkillSource("./data/skill.txt")
 	LoadCardSource("./data/card.txt")

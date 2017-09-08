@@ -14,6 +14,7 @@ type BattleControl struct {
 	IsActorEnd   bool         // 某一具体的行动者的行动是否结束
 	IsGroupEnd   bool         // 某一方行动是否结束
 	IsTurnEnd    bool         // 某一回合是否结束，即双方各自执行了一次行动
+	Logger       *BattleLog   // 战斗日志记录
 }
 
 // MakeOrder ...生成战斗顺序

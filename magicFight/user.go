@@ -22,8 +22,10 @@ func (u *User) MakeOneDeck() {
 func (u *User) MakeOneHero() {
 	for _, v := range cardSource {
 		if v.ActorType == 1 {
-			t := v
-			u.DefaultHero = &t
+			if v.Name == "Athena" {
+				t := v
+				u.DefaultHero = &t
+			}
 		}
 	}
 }

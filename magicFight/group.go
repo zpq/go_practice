@@ -85,7 +85,7 @@ func (g *Group) RemoveCard(c *GameBattler) {
 			c.IsInGraveYard = true
 			g.DeckInGraveYard = append(g.DeckInGraveYard, c)
 			if k == len(g.DeckInBoard)-1 {
-				g.DeckInBoard = g.DeckInBoard[:k-2]
+				g.DeckInBoard = g.DeckInBoard[:k]
 			} else {
 				g.DeckInBoard = append(g.DeckInBoard[:k], g.DeckInBoard[k+1:]...)
 			}

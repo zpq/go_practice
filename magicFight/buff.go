@@ -5,7 +5,7 @@ type Buff struct {
 	Name     string
 	Category int
 	IsCanPly bool // false means buff's ply alway equal one or zero
-	ply      int
+	ply      int  // buff层数
 }
 
 func (b *Buff) Cast() {

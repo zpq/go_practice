@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	maxTurn = 3
+	maxTurn = 10
 )
 
 type Battle struct {

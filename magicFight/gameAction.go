@@ -25,7 +25,7 @@ func (g *GameAction) CommonAttack(gb *GameBattler, b *BattleControl) {
 		}
 		fmt.Print("User")
 		fmt.Print(b.CurrentGroup.UserID)
-		fmt.Println(" " + gb.Name + " use " + v.Name + " to User" + strconv.Itoa(b.TargetGroup.UserID))
+		fmt.Println(" " + gb.Name + " position" + strconv.Itoa(gb.Position) + " use skill " + v.Name)
 		err, result := v.Use(gb, b)
 		if err != nil {
 			log.Fatal(err.Error())
@@ -42,7 +42,7 @@ func (g *GameAction) UseSkill(gb *GameBattler, b *BattleControl) {
 		}
 		fmt.Print("User")
 		fmt.Print(b.CurrentGroup.UserID)
-		fmt.Println(" " + gb.Name + " use " + v.Name + " to User" + strconv.Itoa(b.TargetGroup.UserID))
+		fmt.Println(" " + gb.Name + " position" + strconv.Itoa(gb.Position) + " use skill " + v.Name)
 		err, result := v.Use(gb, b)
 		if err != nil {
 			log.Fatal(err.Error())
